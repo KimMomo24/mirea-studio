@@ -220,7 +220,7 @@ function ClientDash({clientId,onLogout}){
   async function sendReq(e){
     e.preventDefault();if(!reqForm.desc.trim())return;
     await sb.from('requests').insert({client_id:clientId,date:today(),type:reqForm.type,description:reqForm.desc,status:'pending'});
-    await addHistory(clientId,`Richiesta inviata: ${reqForm.type} — "${reqForm.desc.slice(0,40)}"...`,'request');
+    await addHistory(clientId,'Richiesta inviata: '+reqForm.type+' — "'+reqForm.desc.slice(0,40)+'"...','request');
     setReqForm({type:'Grafica Extra',desc:''});setReqSent(true);setTimeout(()=>setReqSent(false),3000);load();
   }
 
@@ -232,7 +232,7 @@ function ClientDash({clientId,onLogout}){
   async function docAction(docId,action){
     const doc=(c.documents||[]).find(d=>d.id===docId);if(!doc)return;
     await sb.from('documents').update({status:action}).eq('id',docId);
-    await addHistory(clientId,`${action==='approved'?'Approvato':'Rifiutato'} documento: ${doc.title}`,action==='approved'?'delivery':'warning');
+    await addHistory(clientId,(action==='approved'?'Approvato':'Rifiutato')+' documento: '+doc.title,action==='approved'?'delivery':'warning');
     setViewDoc(null);load();
   }
 
@@ -290,7 +290,7 @@ function ClientDash({clientId,onLogout}){
         {/* tabs */}
         <div style={{display:'flex',borderBottom:'1px solid #E8E4D9',marginBottom:28,overflowX:'auto'}}>
           {tabs.map(t=>(
-            <button key={t.id} className={`tab-btn${tab===t.id?' active':''}`} onClick={()=>setTab(t.id)} style={{display:'flex',alignItems:'center',gap:5}}>
+            <button key={t.id} className={'tab-btn'+(tab===t.id?' active':'')} onClick={()=>setTab(t.id)} style={{display:'flex',alignItems:'center',gap:5}}>
               {t.icon}{t.label}
             </button>
           ))}
@@ -331,7 +331,7 @@ function ClientDash({clientId,onLogout}){
                   <div key={doc.id} style={{border:'1px solid #E8E4D9',padding:'14px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10}}>
                     <div>
                       <p style={{fontSize:13,fontWeight:600,marginBottom:4}}>{doc.title}</p>
-                      <span className={`tag ${cls}`}>{lbl}</span>
+                      <span className={'tag '+cls}>{lbl}</span>
                     </div>
                     <button className="btn-ghost" onClick={()=>setViewDoc(doc)} style={{width:'auto',padding:'8px 16px'}}>APRI</button>
                   </div>
@@ -392,7 +392,7 @@ function ClientDash({clientId,onLogout}){
                       <div key={r.id} style={{border:'1px solid #E8E4D9',padding:'14px 16px'}}>
                         <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4,flexWrap:'wrap'}}>
                           <span style={{fontWeight:600,fontSize:13}}>{r.type}</span>
-                          <span className={`tag ${cls}`}>{lbl}</span>
+                          <span className={'tag '+cls}>{lbl}</span>
                           {r.payment_amount>0&&<span style={{fontSize:13,fontFamily:'Playfair Display,serif',color:'#a07838',marginLeft:'auto'}}>€{parseFloat(r.payment_amount).toFixed(2)}</span>}
                         </div>
                         <p style={{fontSize:11,color:'#555'}}>{r.description}</p>
@@ -539,20 +539,20 @@ function AdminDash({onLogout}){
   async function addDel(e){
     e.preventDefault();
     await sb.from('deliverables').insert({client_id:selId,label:fDel.label,used:0,total:parseInt(fDel.total)||4});
-    await addHistory(selId,`Aggiunto: ${fDel.label}`,'admin');
+    await addHistory(selId,'Aggiunto: '+fDel.label,'admin');
     setMAddDel(false);setFDel({label:'',total:4});loadSel(selId);
   }
   async function removeDel(dId){
     const d=(sel.deliverables||[]).find(x=>x.id===dId);
     await sb.from('deliverables').delete().eq('id',dId);
-    await addHistory(selId,`Rimosso: ${d?.label}`,'admin');
+    await addHistory(selId,'Rimosso: '+(d?d.label:''),'admin');
     loadSel(selId);
   }
   async function updateUsed(dId,delta){
     const d=(sel.deliverables||[]).find(x=>x.id===dId);if(!d)return;
     const nu=Math.max(0,Math.min(d.total,d.used+delta));
     await sb.from('deliverables').update({used:nu}).eq('id',dId);
-    await addHistory(selId,`${delta>0?'Consegnato':'Annullato'}: ${d.label} (${nu}/${d.total})`,'delivery');
+    await addHistory(selId,(delta>0?'Consegnato':'Annullato')+': '+d.label+' ('+nu+'/'+d.total+')','delivery');
     loadSel(selId);
   }
   async function updateTotal(dId,delta){
@@ -570,19 +570,19 @@ function AdminDash({onLogout}){
     if(p>0){upd.payment_amount=p;upd.payment_method=fApprove.method;upd.payment_details=fApprove.details;upd.payment_note=fApprove.note;}
     await sb.from('requests').update(upd).eq('id',mApprove);
     if(p>0)await sb.from('clients').update({extra_balance:(sel.extra_balance||0)+p,extra_status:'DA SALDARE'}).eq('id',selId);
-    await addHistory(selId,`Richiesta approvata: ${r.type}${p>0?' — €'+p.toFixed(2):''}`,'extra');
+    await addHistory(selId,'Richiesta approvata: '+r.type+(p>0?' — €'+p.toFixed(2):''),'extra');
     setMApprove(null);setFApprove({price:'',method:'Bonifico Bancario',details:'',note:''});
     loadSel(selId);loadClients();
   }
   async function rejectReq(rId){
     const r=(sel.requests||[]).find(x=>x.id===rId);if(!r)return;
     await sb.from('requests').update({status:'rejected'}).eq('id',rId);
-    await addHistory(selId,`Richiesta rifiutata: ${r.type}`,'warning');
+    await addHistory(selId,'Richiesta rifiutata: '+r.type,'warning');
     loadSel(selId);loadClients();
   }
   async function markPaid(){
     await sb.from('clients').update({extra_status:'SALDATO',extra_balance:0}).eq('id',selId);
-    await addHistory(selId,`Extra saldato: €${parseFloat(sel.extra_balance).toFixed(2)}`,'extra');
+    await addHistory(selId,'€'+parseFloat(sel.extra_balance).toFixed(2),'extra');
     loadSel(selId);loadClients();
   }
 
@@ -597,7 +597,7 @@ function AdminDash({onLogout}){
   async function addDoc(e){
     e.preventDefault();if(!fDoc.title||!fDoc.url)return;
     await sb.from('documents').insert({client_id:selId,title:fDoc.title,url:fDoc.url,status:'pending',date:today()});
-    await addHistory(selId,`Caricato documento: ${fDoc.title}`,'admin');
+    await addHistory(selId,'Caricato documento: '+fDoc.title,'admin');
     setFDoc({title:'',url:''});loadSel(selId);
   }
   async function delDoc(id){
@@ -642,7 +642,7 @@ function AdminDash({onLogout}){
             {id:'requests',label:'Richieste'+(totalPending>0?' ('+totalPending+')':''),icon:<Ico.Bell/>},
             {id:'history',label:'Cronologia',icon:<Ico.Clock/>},
           ].map(t=>(
-            <div key={t.id} className={`sidebar-item${tab===t.id?' active':''}`} onClick={()=>{setTab(t.id);setSelId(null);}}>
+            <div key={t.id} className={'sidebar-item'+(tab===t.id?' active':'')} onClick={()=>{setTab(t.id);setSelId(null);}}>
               {t.icon}{t.label}
             </div>
           ))}
@@ -706,7 +706,7 @@ function AdminDash({onLogout}){
                 {/* sub tabs */}
                 <div style={{display:'flex',borderBottom:'1px solid #E8E4D9',marginBottom:24,overflowX:'auto'}}>
                   {['overview','docs','social','requests','extra','history'].map(t=>(
-                    <button key={t} className={`tab-btn${subTab===t?' active':''}`} onClick={()=>setSubTab(t)}>
+                    <button key={t} className={'tab-btn'+(subTab===t?' active':'')} onClick={()=>setSubTab(t)}>
                       {t.toUpperCase()}{t==='requests'&&(sel.requests||[]).filter(r=>r.status==='pending').length>0?' ('+(sel.requests||[]).filter(r=>r.status==='pending').length+')':''}
                     </button>
                   ))}
@@ -833,7 +833,7 @@ function AdminDash({onLogout}){
                             <div>
                               <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}>
                                 <span style={{fontWeight:600,fontSize:13}}>{r.type}</span>
-                                <span className={`tag ${cls}`}>{lbl}</span>
+                                <span className={'tag '+cls}>{lbl}</span>
                               </div>
                               <p style={{fontSize:11,color:'#555',marginBottom:2}}>{r.description}</p>
                               <p style={{fontSize:10,color:'#A0A09A'}}>{r.date}</p>
@@ -858,7 +858,7 @@ function AdminDash({onLogout}){
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
                       <div>
                         <p style={{fontSize:34,fontFamily:'Playfair Display,serif'}}>€{parseFloat(sel.extra_balance||0).toFixed(2)}</p>
-                        <span className={`tag ${sel.extra_status==='SALDATO'?'tag-green':'tag-red'}`}>{sel.extra_status}</span>
+                        <span className={'tag '+(sel.extra_status==='SALDATO'?'tag-green':'tag-red')}>{sel.extra_status}</span>
                       </div>
                       {sel.extra_balance>0&&sel.extra_status!=='SALDATO'&&(
                         <button className="btn-success" onClick={markPaid} style={{width:'auto'}}>SEGNA COME SALDATO</button>
@@ -936,7 +936,7 @@ function AdminDash({onLogout}){
         </form>
       </Modal>
 
-      <Modal open={mEditClient} onClose={()=>setMEditClient(false)} title={`Modifica — ${sel?.name||''}`}>
+      <Modal open={mEditClient} onClose={()=>setMEditClient(false)} title={'Modifica — '+(sel?sel.name||'':'')}>
         <form onSubmit={saveEdit} style={{display:'flex',flexDirection:'column',gap:0}}>
           {[['NOME','name','text'],['EMAIL','email','email'],['PIANO','plan','text'],['MESE','month','text'],['RINNOVO','renewal','text']].map(([l,k,t])=>(
             <Field key={k} label={l}><input className="input-field" type={t} value={fEdit[k]||''} onChange={e=>setFEdit(p=>({...p,[k]:e.target.value}))}/></Field>
