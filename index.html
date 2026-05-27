@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mirea Studio — Area Riservata</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#FDFCF8;font-family:'Montserrat',sans-serif;color:#1A1A1A}
+  #mirea-root{min-height:100vh}
+  .serif{font-family:'Playfair Display',serif!important}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+  .fade-up{animation:fadeUp .4s ease both}
+  .scale-in{animation:scaleIn .35s ease both}
+  .slide-in{animation:slideIn .3s ease both}
+  .btn-primary{background:#1A1A1A;color:#fff;padding:14px 28px;font-size:11px;letter-spacing:.15em;font-weight:700;font-family:'Montserrat',sans-serif;border:none;cursor:pointer;transition:background .2s,transform .1s;width:100%}
+  .btn-primary:hover{background:#5F6F52}
+  .btn-primary:active{transform:scale(.98)}
+  .btn-primary:disabled{background:#ccc;cursor:not-allowed}
+  .btn-ghost{background:transparent;color:#1A1A1A;border:1px solid #D4CFC4;padding:10px 20px;font-size:11px;letter-spacing:.12em;font-weight:600;font-family:'Montserrat',sans-serif;cursor:pointer;transition:all .2s}
+  .btn-ghost:hover{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+  .btn-danger{background:transparent;color:#c0392b;border:1px solid #e0b0aa;padding:8px 16px;font-size:11px;letter-spacing:.1em;font-weight:600;font-family:'Montserrat',sans-serif;cursor:pointer;transition:all .2s}
+  .btn-danger:hover{background:#c0392b;color:#fff}
+  .btn-success{background:transparent;color:#5F6F52;border:1px solid #b5c4ad;padding:8px 16px;font-size:11px;letter-spacing:.1em;font-weight:600;font-family:'Montserrat',sans-serif;cursor:pointer;transition:all .2s}
+  .btn-success:hover{background:#5F6F52;color:#fff}
+  .input-field{width:100%;background:#F5F4F0;border:1px solid transparent;padding:12px 16px;font-size:13px;font-family:'Montserrat',sans-serif;outline:none;transition:border-color .2s;color:#1A1A1A}
+  .input-field:focus{border-color:#D4CFC4;background:#fff}
+  .card{background:#fff;border:1px solid #E8E4D9}
+  .tag{display:inline-block;font-size:9px;letter-spacing:.14em;font-weight:700;padding:3px 10px;text-transform:uppercase}
+  .tag-green{background:#EEF2EB;color:#5F6F52}
+  .tag-red{background:#FDF0EE;color:#b94a40}
+  .tag-yellow{background:#FDF8EE;color:#a07838}
+  .tag-gray{background:#F0EFED;color:#888}
+  .tag-blue{background:#EEF0F8;color:#3a4a7a}
+  .divider{height:1px;background:#E8E4D9;margin:24px 0}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:#F5F4F0}
+  ::-webkit-scrollbar-thumb{background:#D4CFC4;border-radius:2px}
+  ::selection{background:#E8E4D9}
+  .modal-overlay{position:fixed;inset:0;background:rgba(26,26,26,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
+  .modal-box{background:#fff;border:1px solid #D4CFC4;width:100%;max-width:800px;max-height:95vh;overflow-y:auto;padding:32px 40px;position:relative}
+  .sidebar{background:#1A1A1A;color:#fff;min-height:100vh;width:260px;flex-shrink:0;display:flex;flex-direction:column}
+  .sidebar-item{padding:12px 24px;font-size:11px;letter-spacing:.12em;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s;text-transform:uppercase;color:#A0A09A}
+  .sidebar-item:hover{background:rgba(255,255,255,.06);color:#fff}
+  .sidebar-item.active{background:rgba(95,111,82,.25);color:#A8BC9A}
+  .progress-bar{height:3px;background:#E8E4D9;overflow:hidden}
+  .progress-fill{height:100%;background:#1A1A1A;transition:width .5s ease}
+  .history-item{border-left:2px solid #E8E4D9;padding:6px 0 6px 16px;position:relative}
+  .counter-btn{width:32px;height:32px;background:#F5F4F0;border:1px solid #E8E4D9;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .15s;color:#1A1A1A;flex-shrink:0}
+  .counter-btn:hover{background:#1A1A1A;color:#fff;border-color:#1A1A1A}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:9px;letter-spacing:.14em;font-weight:700;color:#888;padding:8px 12px;text-align:left;border-bottom:1px solid #E8E4D9;text-transform:uppercase}
+  td{font-size:12px;padding:10px 12px;border-bottom:1px solid #F5F4F0;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#FDFCF8}
+  .spinner{width:20px;height:20px;border:2px solid #E8E4D9;border-top-color:#1A1A1A;border-radius:50%;animation:spin .6s linear infinite;margin:0 auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="mirea-root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+/* ── SUPABASE INIT ── */
+const { createClient } = supabase;
+const SUPABASE_URL = 'https://klczaixlnevzellhqgob.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_IsysQXRyOInjSdnnH9TzPQ_Q1bgTKpw';
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ADMIN_EMAIL = 'admin@mirea.studio';
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function today() { return new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}); }
+
+/* ── ICONS ── */
+const Icon = {
+  LogOut: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  Plus: ({s=16}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Arrow: ({dir='right',s=16}) => { const d=dir==='left'?'M19 12H5M12 5l-7 7 7 7':'M5 12h14M12 5l7 7-7 7'; return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d={d}/></svg>; },
+  X: ({s=16}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+  Edit: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>,
+  Users: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  History: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  Bell: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+  Contract: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  Key: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></svg>,
+  FileText: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  Instagram: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>,
+  Upload: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+  Euro: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 10h12M4 14h12M19.5 19.5A9 9 0 1 1 19.5 4.5"/></svg>,
+};
+
+/* ── SUPABASE DATA HELPERS ── */
+async function fetchClientByUserId(userId) {
+  const { data, error } = await sb.from('clients').select('*').eq('user_id', userId).single();
+  if (error) return null;
+  return data;
+}
+async function fetchAllClients() {
+  const { data } = await sb.from('clients').select('*').order('created_at', { ascending: false });
+  return data || [];
+}
+async function fetchClientFull(clientId) {
+  const [
+    { data: client },
+    { data: deliverables },
+    { data: requests },
+    { data: documents },
+    { data: feed },
+    { data: history }
+  ] = await Promise.all([
+    sb.from('clients').select('*').eq('id', clientId).single(),
+    sb.from('deliverables').select('*').eq('client_id', clientId),
+    sb.from('requests').select('*').eq('client_id', clientId).order('created_at', { ascending: false }),
+    sb.from('documents').select('*').eq('client_id', clientId).order('created_at', { ascending: false }),
+    sb.from('instagram_feed').select('*').eq('client_id', clientId).order('position', { ascending: true }),
+    sb.from('history').select('*').eq('client_id', clientId).order('created_at', { ascending: false })
+  ]);
+  return { ...client, deliverables: deliverables||[], requests: requests||[], documents: documents||[], instagramFeed: feed||[], history: history||[] };
+}
+
+/* ── COMPONENTS ── */
+function Logo() {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:10}}>
+      <div style={{width:32,height:32,border:'1px solid #D4CFC4',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+        <span className="serif" style={{fontSize:16,color:'#5F6F52',fontStyle:'italic'}}>m</span>
+      </div>
+      <span className="serif" style={{fontSize:15,letterSpacing:'0.05em',color:'#1A1A1A'}}>Mirea Studio</span>
+    </div>
+  );
+}
+
+function Modal({ open, onClose, title, children }) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box scale-in" onClick={e=>e.stopPropagation()}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:28}}>
+          <h3 className="serif" style={{fontSize:22}}>{title}</h3>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#888',marginTop:2}}><Icon.X s={18}/></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function HistoryDot({ type }) {
+  const colors = { delivery:'#5F6F52', request:'#3a4a7a', extra:'#a07838', info:'#888', admin:'#1A1A1A', warning:'#b94a40' };
+  return <span style={{width:7,height:7,borderRadius:'50%',background:colors[type]||'#888',position:'absolute',left:-4.5,top:9,flexShrink:0}} />;
+}
+
+function Spinner() { return <div style={{padding:40,textAlign:'center'}}><div className="spinner"/></div>; }
+
+/* ══════════════════════════════════════════
+   LOGIN PAGE
+══════════════════════════════════════════ */
+function LoginPage({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [pass, setPass] = useState('');
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault(); setErr(''); setLoading(true);
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) { setErr('Email o password non corretti.'); setLoading(false); return; }
+      const user = data.user;
+      if (user.email === ADMIN_EMAIL) {
+        onLogin('admin', null, user);
+      } else {
+        const client = await fetchClientByUserId(user.id);
+        if (client) onLogin('client', client.id, user);
+        else { setErr('Account non associato a nessun cliente.'); await sb.auth.signOut(); }
+      }
+    } catch(ex) { setErr('Errore di connessione.'); }
+    setLoading(false);
+  }
+
+  return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'#FDFCF8',padding:16}}>
+      <div className="fade-up" style={{background:'#fff',border:'1px solid #E8E4D9',width:'100%',maxWidth:440,padding:'52px 48px',textAlign:'center',boxShadow:'0 4px 40px rgba(0,0,0,.04)'}}>
+        <div style={{marginBottom:32}}>
+          <div style={{width:44,height:44,border:'1px solid #D4CFC4',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}>
+            <span className="serif" style={{fontSize:22,color:'#5F6F52',fontStyle:'italic'}}>m</span>
+          </div>
+          <h1 className="serif" style={{fontSize:28,marginBottom:4}}>Area Riservata</h1>
+          <p style={{fontSize:11,color:'#A0A09A',letterSpacing:'.06em'}}>MIREA STUDIO</p>
+        </div>
+        <form onSubmit={handleSubmit} style={{textAlign:'left'}}>
+          <div style={{marginBottom:12}}>
+            <input className="input-field" type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} required />
+          </div>
+          <div style={{marginBottom:16}}>
+            <input className="input-field" type="password" placeholder="Password" value={pass} onChange={e=>setPass(e.target.value)} required />
+          </div>
+          {err && <p style={{fontSize:12,color:'#b94a40',marginBottom:12,textAlign:'center'}}>{err}</p>}
+          <button className="btn-primary" type="submit" disabled={loading}>{loading ? '...' : 'ACCEDI'}</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   CLIENT DASHBOARD
+══════════════════════════════════════════ */
+function ClientDashboard({ clientId, onLogout }) {
+  const [client, setClient] = useState(null);
+  const [tab, setTab] = useState('overview');
+  const [reqForm, setReqForm] = useState({ type: 'Grafica Extra', description: '' });
+  const [reqSent, setReqSent] = useState(false);
+  const [payConfirmed, setPayConfirmed] = useState(false);
+  const [confirmedReqIds, setConfirmedReqIds] = useState([]);
+  const [viewDoc, setViewDoc] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  async function reload() {
+    setLoading(true);
+    const c = await fetchClientFull(clientId);
+    setClient(c);
+    setLoading(false);
+  }
+  useEffect(() => { reload(); }, [clientId]);
+
+  if (loading || !client) return <Spinner />;
+
+  const pendingPayments = (client.requests||[]).filter(r => r.status === 'approved' && r.payment_amount > 0 && client.extra_status === 'DA SALDARE');
+  const pendingDocsCount = (client.documents||[]).filter(d => d.status === 'pending').length;
+
+  async function confirmClientPayment() {
+    await sb.from('history').insert({ client_id: clientId, date: today(), text: "Cliente ha confermato l'avvenuto pagamento — in attesa di verifica", type: 'extra' });
+    setPayConfirmed(true);
+    reload();
+  }
+
+  async function confirmSinglePayment(reqId, reqType, amount) {
+    await sb.from('history').insert({ client_id: clientId, date: today(), text: `Pagamento confermato dal cliente: ${reqType} — €${parseFloat(amount).toFixed(2)}`, type: 'extra' });
+    setConfirmedReqIds(prev => [...prev, reqId]);
+    reload();
+  }
+
+  async function submitRequest(e) {
+    e.preventDefault();
+    if (!reqForm.description.trim()) return;
+    await sb.from('requests').insert({ client_id: clientId, date: today(), type: reqForm.type, description: reqForm.description, status: 'pending' });
+    await sb.from('history').insert({ client_id: clientId, date: today(), text: `Richiesta inviata: ${reqForm.type} — "${reqForm.description.slice(0,40)}..."`, type: 'request' });
+    setReqForm({ type: 'Grafica Extra', description: '' });
+    setReqSent(true);
+    setTimeout(() => setReqSent(false), 3000);
+    reload();
+  }
+
+  async function handleDocAction(docId, action) {
+    const doc = (client.documents||[]).find(d => d.id === docId);
+    if (!doc) return;
+    await sb.from('documents').update({ status: action }).eq('id', docId);
+    const text = action === 'approved' ? `Approvato documento: ${doc.title}` : `Rifiutato documento: ${doc.title}`;
+    await sb.from('history').insert({ client_id: clientId, date: today(), text, type: action === 'approved' ? 'delivery' : 'warning' });
+    setViewDoc(null);
+    reload();
+  }
+
+  const reqStatusLabel = (s) => ({ pending: ['IN ATTESA','tag-yellow'], approved: ['APPROVATO','tag-green'], rejected: ['RIFIUTATO','tag-red'], done: ['COMPLETATO','tag-green'] })[s] || [s,'tag-gray'];
+  const docStatusLabel = (s) => ({ pending: ['DA APPROVARE','tag-yellow'], approved: ['APPROVATO','tag-green'], rejected: ['RIFIUTATO','tag-red'] })[s] || [s,'tag-gray'];
+
+  const tabs = [
+    { id:'overview', label:'LAVORI', icon:<Icon.Contract/> },
+    { id:'docs', label:`DOCUMENTI${pendingDocsCount>0?` (${pendingDocsCount})`:''}`, icon:<Icon.FileText/> },
+    { id:'social', label:'FEED IG', icon:<Icon.Instagram/> },
+    { id:'requests', label:'RICHIESTE', icon:<Icon.Bell/> },
+    { id:'history', label:'CRONOLOGIA', icon:<Icon.History/> },
+  ];
+
+  return (
+    <div style={{minHeight:'100vh',background:'#FDFCF8'}}>
+      <div style={{background:'#fff',borderBottom:'1px solid #E8E4D9',padding:'16px 32px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <Logo />
+        <div style={{display:'flex',alignItems:'center',gap:20}}>
+          <span style={{fontSize:12,color:'#888'}}>{client.name}</span>
+          <button onClick={onLogout} style={{background:'none',border:'none',cursor:'pointer',color:'#888',display:'flex',alignItems:'center',gap:6,fontSize:11,letterSpacing:'.1em',fontFamily:'Montserrat,sans-serif'}}>
+            <Icon.LogOut /> ESCI
+          </button>
+        </div>
+      </div>
+
+      <div style={{maxWidth:860,margin:'0 auto',padding:'40px 20px'}}>
+        <div className="fade-up" style={{marginBottom:36}}>
+          <h2 className="serif" style={{fontSize:34,marginBottom:4}}>Ciao, {client.name.split(' ')[0]}.</h2>
+          <p style={{fontSize:12,color:'#888'}}>{client.plan} &nbsp;·&nbsp; Rinnovo: {client.renewal}</p>
+        </div>
+
+        {/* Pagamento da saldare */}
+        {client.extra_balance > 0 && client.extra_status === 'DA SALDARE' && (
+          <div className="fade-up" style={{marginBottom:28,border:'1px solid #F0E0B8',background:'#FFFCF5',overflow:'hidden'}}>
+            <div style={{background:'#FDF3DC',borderBottom:'1px solid #F0E0B8',padding:'14px 24px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <span style={{fontSize:18,fontFamily:'Playfair Display,serif',color:'#a07838',fontWeight:600}}>€{parseFloat(client.extra_balance).toFixed(2)}</span>
+                <span style={{fontSize:11,color:'#a07838',fontWeight:600}}>da saldare</span>
+              </div>
+              <span className="tag tag-yellow">DA SALDARE</span>
+            </div>
+            {pendingPayments.length > 0 && (
+              <div style={{padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
+                {pendingPayments.map(r => (
+                  <div key={r.id} style={{background:'#fff',border:'1px solid #F0E0B8',padding:'16px 18px'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12,flexWrap:'wrap',gap:6}}>
+                      <div>
+                        <p style={{fontSize:12,fontWeight:700,marginBottom:2}}>{r.type}</p>
+                        <p style={{fontSize:11,color:'#888'}}>{r.description}</p>
+                      </div>
+                      <span style={{fontSize:16,fontFamily:'Playfair Display,serif',color:'#1A1A1A',fontWeight:600}}>€{parseFloat(r.payment_amount).toFixed(2)}</span>
+                    </div>
+                    <div style={{height:1,background:'#F5EDD6',marginBottom:12}}/>
+                    <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                      <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+                        <span style={{fontSize:9,letterSpacing:'.1em',fontWeight:700,color:'#888',minWidth:72,textTransform:'uppercase'}}>Metodo</span>
+                        <span style={{fontSize:13,fontWeight:700,color:'#1A1A1A'}}>{r.payment_method}</span>
+                      </div>
+                      {r.payment_details && (
+                        <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+                          <span style={{fontSize:9,letterSpacing:'.1em',fontWeight:700,color:'#888',minWidth:72,textTransform:'uppercase'}}>Dettagli</span>
+                          <span style={{fontSize:12,fontWeight:700,color:'#1A1A1A',userSelect:'all',wordBreak:'break-all',fontFamily:'monospace',background:'#F5F4F0',padding:'3px 8px'}}>{r.payment_details}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{padding:'0 24px 20px'}}>
+              {!payConfirmed ? (
+                <button onClick={confirmClientPayment} className="btn-primary">HO EFFETTUATO IL PAGAMENTO</button>
+              ) : (
+                <div style={{background:'#EEF2EB',padding:'13px 20px',textAlign:'center',border:'1px solid #C4D4BC'}}>
+                  <p style={{fontSize:12,color:'#5F6F52',fontWeight:700}}>✓ Conferma ricevuta — lo studio verificherà a breve</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {client.extra_balance > 0 && client.extra_status === 'SALDATO' && (
+          <div className="fade-up" style={{marginBottom:24,background:'#EEF2EB',border:'1px solid #C4D4BC',padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span style={{fontSize:12,color:'#5F6F52',fontWeight:600}}>Pagamento confermato ✓</span>
+            <span className="tag tag-green">SALDATO</span>
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div style={{display:'flex',gap:0,borderBottom:'1px solid #E8E4D9',marginBottom:32,overflowX:'auto'}}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              background:'none',border:'none',cursor:'pointer',padding:'10px 20px',
+              fontSize:10,letterSpacing:'.14em',fontWeight:700,fontFamily:'Montserrat,sans-serif',
+              color: tab===t.id?'#1A1A1A':'#A0A09A',
+              borderBottom: tab===t.id?'2px solid #1A1A1A':'2px solid transparent',
+              display:'flex',alignItems:'center',gap:6,transition:'color .2s',whiteSpace:'nowrap'
+            }}>{t.icon}{t.label}</button>
+          ))}
+        </div>
+
+        {tab === 'overview' && (
+          <div className="fade-up">
+            <div className="card" style={{padding:'32px'}}>
+              <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:20}}>AVANZAMENTO LAVORI — {client.month}</p>
+              <div style={{display:'flex',flexDirection:'column',gap:24}}>
+                {(client.deliverables||[]).map(item => (
+                  <div key={item.id}>
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:8,alignItems:'flex-end'}}>
+                      <span style={{fontWeight:600,fontSize:15}}>{item.label}</span>
+                      <span style={{fontSize:11,color:'#888'}}>{item.used} / {item.total}</span>
+                    </div>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{width:`${item.total>0?(item.used/item.total)*100:0}%`}} />
+                    </div>
+                    <p style={{fontSize:10,color:'#A0A09A',marginTop:4}}>{item.total-item.used} rimanenti questo mese</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {client.contract_notes && (
+              <div style={{marginTop:20,padding:'20px 24px',background:'#F5F4F0',borderLeft:'3px solid #D4CFC4'}}>
+                <p style={{fontSize:10,letterSpacing:'.12em',color:'#888',marginBottom:6,fontWeight:700}}>NOTE CONTRATTO</p>
+                <p style={{fontSize:12,color:'#555',lineHeight:1.7}}>{client.contract_notes}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'docs' && (
+          <div className="fade-up">
+            <div className="card" style={{padding:'32px'}}>
+              <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:20}}>DOCUMENTI DA VISIONARE</p>
+              {(!client.documents || client.documents.length === 0) ? (
+                <p style={{fontSize:12,color:'#888'}}>Nessun documento presente.</p>
+              ) : (
+                <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                  {client.documents.map(doc => {
+                    const [lbl, cls] = docStatusLabel(doc.status);
+                    return (
+                      <div key={doc.id} style={{border:'1px solid #E8E4D9',padding:'16px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
+                        <div style={{display:'flex',alignItems:'center',gap:12}}>
+                          <div style={{width:40,height:40,background:'#F5F4F0',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:4,color:'#5F6F52'}}><Icon.FileText /></div>
+                          <div>
+                            <p style={{fontSize:13,fontWeight:600,marginBottom:4}}>{doc.title}</p>
+                            <span className={`tag ${cls}`} style={{fontSize:8}}>{lbl}</span>
+                          </div>
+                        </div>
+                        <button className="btn-ghost" onClick={() => setViewDoc(doc)} style={{width:'auto'}}>
+                          {doc.status === 'pending' ? 'VISIONA' : 'APRI'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab === 'social' && (
+          <div className="fade-up">
+            <div style={{display:'flex',justifyContent:'center'}}>
+              <div style={{width:'100%',maxWidth:400,background:'#fff',border:'1px solid #E8E4D9',borderRadius:24,overflow:'hidden',boxShadow:'0 10px 40px rgba(0,0,0,0.05)'}}>
+                <div style={{display:'flex',borderBottom:'1px solid #efefef'}}>
+                  <div style={{flex:1,padding:'12px 0',display:'flex',justifyContent:'center',borderBottom:'1px solid #000'}}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                  </div>
+                  <div style={{flex:1,padding:'12px 0',display:'flex',justifyContent:'center'}}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8e8e8e" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                </div>
+                {(!client.instagramFeed || client.instagramFeed.length === 0) ? (
+                  <div style={{padding:'60px 20px',textAlign:'center',color:'#8e8e8e'}}>
+                    <p style={{fontSize:20,fontWeight:700,color:'#000'}}>Nessun post</p>
+                  </div>
+                ) : (
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'2px',background:'#fff',paddingBottom:'2px'}}>
+                    {client.instagramFeed.map(item => (
+                      <div key={item.id} style={{aspectRatio:'4/5',background:'#efefef',position:'relative'}}>
+                        <img src={item.url} alt="Post IG" style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'requests' && (
+          <div className="fade-up">
+            <div className="card" style={{padding:'32px',marginBottom:24}}>
+              <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:20}}>NUOVA RICHIESTA EXTRA</p>
+              <form onSubmit={submitRequest}>
+                <div style={{marginBottom:12}}>
+                  <label style={{fontSize:10,letterSpacing:'.1em',color:'#888',display:'block',marginBottom:6}}>TIPO</label>
+                  <select className="input-field" value={reqForm.type} onChange={e=>setReqForm(p=>({...p,type:e.target.value}))} style={{appearance:'none'}}>
+                    <option>Grafica Extra</option><option>Video Extra</option><option>Stories Extra</option><option>Consulenza</option><option>Altro</option>
+                  </select>
+                </div>
+                <div style={{marginBottom:16}}>
+                  <label style={{fontSize:10,letterSpacing:'.1em',color:'#888',display:'block',marginBottom:6}}>DESCRIZIONE</label>
+                  <textarea className="input-field" rows={3} placeholder="Descrivi cosa ti serve..." value={reqForm.description} onChange={e=>setReqForm(p=>({...p,description:e.target.value}))} style={{resize:'vertical'}} />
+                </div>
+                {reqSent && <p style={{fontSize:12,color:'#5F6F52',marginBottom:10,fontWeight:600}}>✓ Richiesta inviata con successo!</p>}
+                <button className="btn-primary" type="submit" style={{width:'auto',padding:'12px 28px'}}>INVIA RICHIESTA</button>
+              </form>
+            </div>
+            {(client.requests||[]).length > 0 && (
+              <div className="card" style={{padding:'24px 32px'}}>
+                <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:16}}>STORICO RICHIESTE</p>
+                <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                  {client.requests.map(r => {
+                    const [label, cls] = reqStatusLabel(r.status);
+                    const hasPayment = r.status === 'approved' && r.payment_amount > 0;
+                    return (
+                      <div key={r.id} style={{border:'1px solid #E8E4D9',overflow:'hidden'}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:8,padding:'14px 18px'}}>
+                          <div>
+                            <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}>
+                              <span style={{fontWeight:600,fontSize:13}}>{r.type}</span>
+                              <span className={`tag ${cls}`}>{label}</span>
+                            </div>
+                            <p style={{fontSize:11,color:'#555',marginBottom:2}}>{r.description}</p>
+                            <p style={{fontSize:10,color:'#A0A09A'}}>{r.date}</p>
+                          </div>
+                          {hasPayment && <span style={{fontSize:16,fontFamily:'Playfair Display,serif',color:'#a07838'}}>€{parseFloat(r.payment_amount).toFixed(2)}</span>}
+                        </div>
+                        {hasPayment && !confirmedReqIds.includes(r.id) && (
+                          <div style={{background:'#FDF8EE',borderTop:'1px solid #F0E0B8',padding:'16px 20px'}}>
+                            <button onClick={() => confirmSinglePayment(r.id, r.type, r.payment_amount)}
+                              style={{background:'#1A1A1A',color:'#fff',border:'none',padding:'14px 20px',fontSize:11,letterSpacing:'.15em',fontWeight:700,fontFamily:'Montserrat,sans-serif',cursor:'pointer',width:'100%'}}>
+                              HO EFFETTUATO IL PAGAMENTO ✓
+                            </button>
+                          </div>
+                        )}
+                        {confirmedReqIds.includes(r.id) && (
+                          <div style={{background:'#EEF2EB',borderTop:'1px solid #C4D4BC',padding:'12px 16px',display:'flex',alignItems:'center',gap:8}}>
+                            <span style={{fontSize:12,color:'#5F6F52',fontWeight:700}}>✓ Conferma inviata — lo studio verificherà a breve</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'history' && (
+          <div className="fade-up">
+            <div className="card" style={{padding:'32px'}}>
+              <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:24}}>CRONOLOGIA ATTIVITÀ</p>
+              <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                {(client.history||[]).map(h => (
+                  <div key={h.id} className="history-item" style={{marginBottom:16}}>
+                    <HistoryDot type={h.type} />
+                    <p style={{fontSize:12,fontWeight:500}}>{h.text}</p>
+                    <p style={{fontSize:10,color:'#A0A09A',marginTop:2}}>{h.date}</p>
+                  </div>
+                ))}
+                {(!client.history || client.history.length === 0) && <p style={{fontSize:12,color:'#888'}}>Nessuna attività registrata.</p>}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <Modal open={!!viewDoc} onClose={() => setViewDoc(null)} title={viewDoc?.title}>
+        {viewDoc && (
+          <div style={{display:'flex',flexDirection:'column',gap:20}}>
+            {viewDoc.url && (
+              <div style={{display:'flex',justifyContent:'flex-end'}}>
+                <a href={viewDoc.url} target="_blank" rel="noopener" className="btn-ghost" style={{display:'flex',alignItems:'center',gap:8,textDecoration:'none',width:'auto',padding:'8px 16px',fontSize:10}}>
+                  <Icon.Upload /> APRI / SCARICA
+                </a>
+              </div>
+            )}
+            <div style={{background:'#F5F4F0',border:'1px solid #E8E4D9',borderRadius:4,minHeight:200,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              {viewDoc.url ? (
+                <iframe src={viewDoc.url} style={{width:'100%',height:400,border:'none'}} title="Documento" />
+              ) : (
+                <p style={{fontSize:12,color:'#888'}}>Nessun file allegato</p>
+              )}
+            </div>
+            {viewDoc.status === 'pending' && (
+              <div style={{background:'#FFFCF5',border:'1px solid #F0E0B8',padding:'16px'}}>
+                <p style={{fontSize:11,fontWeight:600,color:'#a07838',textAlign:'center',marginBottom:12}}>Questo documento richiede la tua approvazione.</p>
+                <div style={{display:'flex',gap:10}}>
+                  <button onClick={() => handleDocAction(viewDoc.id, 'rejected')} className="btn-danger" style={{flex:1}}>RIFIUTA / MODIFICA</button>
+                  <button onClick={() => handleDocAction(viewDoc.id, 'approved')} className="btn-primary" style={{flex:1,width:'auto'}}>APPROVA</button>
+                </div>
+              </div>
+            )}
+            {viewDoc.status === 'approved' && <div style={{background:'#EEF2EB',border:'1px solid #C4D4BC',padding:'12px',textAlign:'center',color:'#5F6F52',fontSize:11,fontWeight:700}}>✓ Documento Approvato</div>}
+            {viewDoc.status === 'rejected' && <div style={{background:'#FDF0EE',border:'1px solid #e0b0aa',padding:'12px',textAlign:'center',color:'#b94a40',fontSize:11,fontWeight:700}}>✕ Documento Rifiutato</div>}
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   ADMIN DASHBOARD
+══════════════════════════════════════════ */
+function AdminDashboard({ onLogout }) {
+  const [clients, setClients] = useState([]);
+  const [tab, setTab] = useState('clients');
+  const [selectedId, setSelectedId] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [adminSubTab, setAdminSubTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [subLoading, setSubLoading] = useState(false);
+
+  const [showNewClient, setShowNewClient] = useState(false);
+  const [showEditClient, setShowEditClient] = useState(false);
+  const [showResetPw, setShowResetPw] = useState(false);
+  const [showAddDeliverable, setShowAddDeliverable] = useState(false);
+  const [showApproveExtra, setShowApproveExtra] = useState(null);
+
+  const [newClient, setNewClient] = useState({ name:'', email:'', password:'', plan:'', contract_notes:'', renewal:'', month:'' });
+  const [editForm, setEditForm] = useState({});
+  const [newPw, setNewPw] = useState('');
+  const [newDeliverable, setNewDeliverable] = useState({ label:'', total:4 });
+  const [approvePrice, setApprovePrice] = useState('');
+  const [approveMethod, setApproveMethod] = useState('Bonifico Bancario');
+  const [approveDetails, setApproveDetails] = useState('');
+  const [approveNote, setApproveNote] = useState('');
+  const [noteText, setNoteText] = useState('');
+  const [newDocTitle, setNewDocTitle] = useState('');
+  const [newDocUrl, setNewDocUrl] = useState('');
+  const [newIgUrl, setNewIgUrl] = useState('');
+  const [draggedIdx, setDraggedIdx] = useState(null);
+
+  async function reloadClients() {
+    setLoading(true);
+    const data = await fetchAllClients();
+    // fetch pending counts
+    const withCounts = await Promise.all(data.map(async c => {
+      const { count: pendingReqs } = await sb.from('requests').select('*', { count: 'exact', head: true }).eq('client_id', c.id).eq('status', 'pending');
+      return { ...c, pendingReqs: pendingReqs || 0 };
+    }));
+    setClients(withCounts);
+    setLoading(false);
+  }
+
+  async function reloadSelected(id) {
+    if (!id) return;
+    setSubLoading(true);
+    const data = await fetchClientFull(id);
+    setSelected(data);
+    setSubLoading(false);
+  }
+
+  useEffect(() => { reloadClients(); }, []);
+  useEffect(() => { if (selectedId) reloadSelected(selectedId); else setSelected(null); }, [selectedId]);
+
+  const pendingRequests = clients.reduce((acc, c) => acc + (c.pendingReqs||0), 0);
+
+  async function addClient(e) {
+    e.preventDefault();
+    // 1. crea utente Supabase Auth tramite admin
+    const { data: authData, error: authErr } = await sb.auth.signUp({ email: newClient.email, password: newClient.password });
+    if (authErr) { alert('Errore creazione utente: ' + authErr.message); return; }
+    const userId = authData.user?.id;
+    // 2. crea riga clients
+    const { data: clientRow } = await sb.from('clients').insert({
+      user_id: userId,
+      name: newClient.name,
+      email: newClient.email,
+      plan: newClient.plan,
+      contract_notes: newClient.contract_notes,
+      renewal: newClient.renewal,
+      month: newClient.month,
+      extra_balance: 0,
+      extra_status: 'SALDATO'
+    }).select().single();
+    if (clientRow) {
+      await sb.from('history').insert({ client_id: clientRow.id, date: today(), text: 'Cliente creato', type: 'admin' });
+    }
+    setShowNewClient(false);
+    setNewClient({ name:'', email:'', password:'', plan:'', contract_notes:'', renewal:'', month:'' });
+    reloadClients();
+  }
+
+  async function deleteClient(id) {
+    if (!window.confirm('Eliminare questo cliente?')) return;
+    await sb.from('clients').delete().eq('id', id);
+    if (selectedId === id) setSelectedId(null);
+    reloadClients();
+  }
+
+  async function saveEditClient(e) {
+    e.preventDefault();
+    await sb.from('clients').update(editForm).eq('id', selectedId);
+    await sb.from('history').insert({ client_id: selectedId, date: today(), text: 'Dati cliente aggiornati', type: 'admin' });
+    setShowEditClient(false);
+    reloadSelected(selectedId);
+  }
+
+  async function resetPassword(e) {
+    e.preventDefault();
+    // aggiorna password via admin — nota: richiede service role in produzione reale
+    // per ora aggiorniamo solo la nota in history
+    await sb.from('history').insert({ client_id: selectedId, date: today(), text: 'Richiesta reset password', type: 'admin' });
+    setShowResetPw(false);
+    setNewPw('');
+    alert('Per la sicurezza, il reset password va fatto da Supabase Auth → Users → Send reset email.');
+  }
+
+  async function updateDeliverable(dId, delta) {
+    const d = (selected.deliverables||[]).find(x => x.id === dId);
+    if (!d) return;
+    const newUsed = Math.max(0, Math.min(d.total, d.used + delta));
+    await sb.from('deliverables').update({ used: newUsed }).eq('id', dId);
+    const verb = delta > 0 ? 'Consegnato' : 'Annullata consegna';
+    await sb.from('history').insert({ client_id: selectedId, date: today(), text: `${verb}: ${d.label} (${newUsed}/${d.total})`, type: 'delivery' });
+    reloadSelected(selectedId);
+  }
+
+  async function updateDeliverableTotal(dId, delta) {
+    const d = (selected.deliverables||[]).find(x => x.id === dId);
+    if (!d) return;
+    await sb.from('deliverables').update({ total: Math.max(0, d.total + delta) }).eq('id', dId);
+    reloadSelected(selectedId);
+  }
+
+  async function addDeliverable(e) {
+    e.preventDefault();
+    if (!newDeliverable.label.trim()) return;
+    await sb.from('deliverables').insert({ client_id: selectedId, label: newDeliverable.label, used: 0, total: parseInt(newDeliverable.total)||4 });
+    await sb.from('history').insert({ client_id: selectedId, date: today(), text: `Aggiunto deliverable: ${newDeliverable.label}`, type: 'admin' });
+    setShowAddDeliverable(false);
+    setNewDeliverable({ label:'', total:4 });
+    reloadSelected(selectedId);
+  }
+
+  async function removeDeliverable(dId) {
+    const d = (selected.deliverables||[]).find(x => x.id === dId);
+    await sb.from('deliverables').delete().eq('id', dId);
+    await sb.from('history').insert({ client_id: selectedId, date: today(), text: `Rimosso deliverable: ${d?.label}`, type: 'admin' });
+    reloadSelected(selectedId);
+  }
+
+  async function approveRequest(requestId, price, method, details, note) {
+    const r = (selected.requests||[]).find(x => x.id === requestId);
+    if (!r) return;
+    const p = parseFloat(price)||0;
+    const updates = { status: 'approved' };
+    if (p > 0) { updates.payment_amount = p; updates.payment_method = method; updates.payment_details = details; updates.payment_note = note; }
+    await sb.from('requests').update(updates).eq('id', requestId);
+    if (p > 0) {
+      await sb.from('clients').update({ extra_balance: (selected.extra_balance||0) + p, extra_status: 'DA SALDARE' }).eq('id', selectedId);
+    }
+    await sb.from('history').insert({ client_id: selectedId, date: today(), text: `Richiesta approvata: ${r.type}${p>0?' — €'+p.toFixed(2):''}`, type: 'extra' });
+    setShowApproveExtra(null);
+    reloadSelected(selectedId);
+    reloadClients();
+  }
+
+  async function rejectRequest(requestId) {
+    const r = (selected.requests||[]).find(x => x.id === requestId);
+    if (!r) return;
+    await sb.from('requests').update({ status: 'rejected' }).eq('id', requestId);
+    await sb.from('history').insert({ client_id: selectedId, date: today(), text: `Richiesta rifiutata: ${r.type}`, type: 'warning' });
+    reloadSelected(selectedId);
+    reloadClients();
+  }
+
+  async function markExtraPaid() {
+    await sb.from('clients').update({ extra_status: 'SALDATO', extra_balance: 0 }).eq('id', selectedId);
+    await sb.from('history').insert({ client_id: selectedId, date: today(), text: `Extra saldato: €${parseFloat(selected.extra_balance).toFixed(2)}`, type: 'extra' });
+    reloadSelected(selectedId);
+    reloadClients();
+  }
+
+  async function submitNote(e) {
+    e.preventDefault();
+    if (!noteText.trim()) return;
+    await sb.from('history').insert({ client_id: selectedId, date: today(), text: noteText.trim(), type: 'admin' });
+    setNoteText('');
+    reloadSelected(selectedId);
+  }
+
+  async function submitDoc(e) {
+    e.preventDefault();
+    if (!newDocTitle.trim() || !newDocUrl.trim()) return;
+    await sb.from('documents').insert({ client_id: selectedId, title: newDocTitle, url: newDocUrl, status: 'pending', date: today() });
+    await sb.from('history').insert({ client_id: selectedId, date: today(), text: `Caricato documento: ${newDocTitle}`, type: 'admin' });
+    setNewDocTitle(''); setNewDocUrl('');
+    reloadSelected(selectedId);
+  }
+
+  async function deleteDoc(docId) {
+    await sb.from('documents').delete().eq('id', docId);
+    reloadSelected(selectedId);
+  }
+
+  async function addIgPhoto(e) {
+    e.preventDefault();
+    if (!newIgUrl.trim()) return;
+    const pos = (selected.instagramFeed||[]).length;
+    await sb.from('instagram_feed').insert({ client_id: selectedId, url: newIgUrl.trim(), position: pos });
+    setNewIgUrl('');
+    reloadSelected(selectedId);
+  }
+
+  async function deleteIgPhoto(photoId) {
+    await sb.from('instagram_feed').delete().eq('id', photoId);
+    reloadSelected(selectedId);
+  }
+
+  async function handleDrop(e, targetIdx) {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIdx) return;
+    const feed = [...(selected.instagramFeed||[])];
+    const item = feed[draggedIdx];
+    feed.splice(draggedIdx, 1);
+    feed.splice(targetIdx, 0, item);
+    // update positions
+    await Promise.all(feed.map((f, i) => sb.from('instagram_feed').update({ position: i }).eq('id', f.id)));
+    setDraggedIdx(null);
+    reloadSelected(selectedId);
+  }
+
+  const reqStatusLabel = (s) => ({ pending: ['IN ATTESA','tag-yellow'], approved: ['APPROVATO','tag-green'], rejected: ['RIFIUTATO','tag-red'] })[s] || [s,'tag-gray'];
+
+  if (loading) return <Spinner />;
+
+  return (
+    <div style={{display:'flex',minHeight:'100vh',background:'#FDFCF8'}}>
+      <div className="sidebar">
+        <div style={{padding:'28px 24px',borderBottom:'1px solid rgba(255,255,255,.08)'}}>
+          <p className="serif" style={{fontSize:16,color:'#fff'}}>Mirea Studio</p>
+          <p style={{fontSize:9,color:'#666',letterSpacing:'.1em'}}>ADMIN PANEL</p>
+        </div>
+        <nav style={{flex:1,paddingTop:16}}>
+          {[
+            { id:'clients', label:'Clienti', icon:<Icon.Users/> },
+            { id:'requests', label:`Richieste${pendingRequests>0?` (${pendingRequests})`:''}`, icon:<Icon.Bell/> },
+            { id:'history', label:'Cronologia Globale', icon:<Icon.History/> },
+          ].map(t => (
+            <div key={t.id} className={`sidebar-item ${tab===t.id?'active':''}`} onClick={() => { setTab(t.id); setSelectedId(null); }}>
+              {t.icon} {t.label}
+            </div>
+          ))}
+        </nav>
+        <div style={{padding:'16px 24px'}}>
+          <button onClick={onLogout} style={{background:'none',border:'none',color:'#666',display:'flex',gap:8,fontSize:11,cursor:'pointer'}}><Icon.LogOut/> ESCI</button>
+        </div>
+      </div>
+
+      <div style={{flex:1,overflow:'auto'}}>
+        <div style={{padding:'32px 40px',maxWidth:1000}}>
+
+          {tab === 'clients' && !selectedId && (
+            <div className="fade-up">
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:32}}>
+                <h2 className="serif" style={{fontSize:30}}>Clienti Attivi</h2>
+                <button className="btn-ghost" onClick={() => setShowNewClient(true)} style={{display:'flex',alignItems:'center',gap:6,width:'auto'}}>
+                  <Icon.Plus s={14}/> NUOVO CLIENTE
+                </button>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:20}}>
+                {clients.map(c => (
+                  <div key={c.id} className="card" style={{padding:'28px',cursor:'pointer'}} onClick={() => { setSelectedId(c.id); setAdminSubTab('overview'); }}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
+                      <h3 className="serif" style={{fontSize:20}}>{c.name}</h3>
+                      <button onClick={e=>{e.stopPropagation();deleteClient(c.id)}} style={{background:'none',border:'none',cursor:'pointer',color:'#ccc'}}><Icon.Trash/></button>
+                    </div>
+                    <p style={{fontSize:11,color:'#888',marginBottom:4}}>{c.email}</p>
+                    <p style={{fontSize:11,color:'#888',marginBottom:12}}>{c.plan}</p>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      <span className="tag tag-gray">{c.month||'—'}</span>
+                      {c.pendingReqs > 0 && <span className="tag tag-yellow">{c.pendingReqs} PENDING</span>}
+                      {c.extra_balance > 0 && <span className="tag tag-red">€{parseFloat(c.extra_balance).toFixed(2)} DA SALDARE</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tab === 'clients' && selectedId && (
+            <div className="fade-up">
+              {subLoading || !selected ? <Spinner /> : (
+                <>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:28}}>
+                    <div style={{display:'flex',alignItems:'center',gap:12}}>
+                      <button onClick={()=>setSelectedId(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#888'}}><Icon.Arrow dir="left" s={18}/></button>
+                      <div>
+                        <h2 className="serif" style={{fontSize:28}}>{selected.name}</h2>
+                        <p style={{fontSize:11,color:'#888'}}>{selected.email}</p>
+                      </div>
+                    </div>
+                    <div style={{display:'flex',gap:8}}>
+                      <button className="btn-ghost" onClick={() => { setEditForm({name:selected.name,email:selected.email,plan:selected.plan,contract_notes:selected.contract_notes,renewal:selected.renewal,month:selected.month}); setShowEditClient(true); }} style={{width:'auto',display:'flex',alignItems:'center',gap:6,fontSize:10}}><Icon.Edit/> MODIFICA</button>
+                      <button className="btn-ghost" onClick={() => setShowResetPw(true)} style={{width:'auto',display:'flex',alignItems:'center',gap:6,fontSize:10}}><Icon.Key/> PASSWORD</button>
+                    </div>
+                  </div>
+
+                  <div style={{display:'flex',gap:0,borderBottom:'1px solid #E8E4D9',marginBottom:28,overflowX:'auto'}}>
+                    {['overview','docs','social','requests','extra','history'].map(t => (
+                      <button key={t} onClick={() => setAdminSubTab(t)} style={{
+                        background:'none',border:'none',cursor:'pointer',padding:'10px 18px',
+                        fontSize:10,letterSpacing:'.14em',fontWeight:700,fontFamily:'Montserrat,sans-serif',
+                        color: adminSubTab===t?'#1A1A1A':'#A0A09A',
+                        borderBottom: adminSubTab===t?'2px solid #1A1A1A':'2px solid transparent',
+                        whiteSpace:'nowrap'
+                      }}>{t.toUpperCase()}{t==='requests'&&(selected.requests||[]).filter(r=>r.status==='pending').length>0?` (${(selected.requests||[]).filter(r=>r.status==='pending').length})`:''}</button>
+                    ))}
+                  </div>
+
+                  {/* overview */}
+                  {adminSubTab === 'overview' && (
+                    <div>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+                        <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700}}>DELIVERABLE — {selected.month}</p>
+                        <button className="btn-ghost" onClick={() => setShowAddDeliverable(true)} style={{width:'auto',display:'flex',alignItems:'center',gap:6,fontSize:10,padding:'8px 16px'}}><Icon.Plus s={12}/> AGGIUNGI</button>
+                      </div>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:16,marginBottom:24}}>
+                        {(selected.deliverables||[]).map(d => (
+                          <div key={d.id} className="card" style={{padding:'20px'}}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                              <span style={{fontWeight:600,fontSize:13}}>{d.label}</span>
+                              <button onClick={() => removeDeliverable(d.id)} style={{background:'none',border:'none',cursor:'pointer',color:'#ccc'}}><Icon.Trash/></button>
+                            </div>
+                            <div style={{fontSize:28,fontFamily:'Playfair Display,serif',textAlign:'center',margin:'12px 0'}}>
+                              {d.used}<span style={{fontSize:16,color:'#ccc'}}>/{d.total}</span>
+                            </div>
+                            <div className="progress-bar" style={{marginBottom:12}}>
+                              <div className="progress-fill" style={{width:`${d.total>0?(d.used/d.total)*100:0}%`}} />
+                            </div>
+                            <div style={{display:'flex',justifyContent:'center',gap:6,marginBottom:8}}>
+                              <button className="counter-btn" onClick={() => updateDeliverable(d.id, -1)}>−</button>
+                              <button className="counter-btn" onClick={() => updateDeliverable(d.id, 1)}>+</button>
+                            </div>
+                            <div style={{display:'flex',justifyContent:'center',gap:4,fontSize:9,color:'#aaa'}}>
+                              <span>Totale:</span>
+                              <button className="counter-btn" style={{width:22,height:22,fontSize:10}} onClick={() => updateDeliverableTotal(d.id,-1)}>−</button>
+                              <span style={{lineHeight:'22px',fontSize:11,fontWeight:600}}>{d.total}</span>
+                              <button className="counter-btn" style={{width:22,height:22,fontSize:10}} onClick={() => updateDeliverableTotal(d.id,1)}>+</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {selected.contract_notes && (
+                        <div style={{padding:'16px 20px',background:'#F5F4F0',borderLeft:'3px solid #D4CFC4'}}>
+                          <p style={{fontSize:9,letterSpacing:'.12em',color:'#888',marginBottom:4,fontWeight:700}}>NOTE CONTRATTO</p>
+                          <p style={{fontSize:12,color:'#555',lineHeight:1.7}}>{selected.contract_notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* docs */}
+                  {adminSubTab === 'docs' && (
+                    <div>
+                      <div className="card" style={{padding:'28px',marginBottom:20}}>
+                        <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:16}}>CARICA DOCUMENTO</p>
+                        <p style={{fontSize:11,color:'#aaa',marginBottom:12}}>Carica il PDF su Google Drive, rendi pubblico il link e incollalo qui.</p>
+                        <form onSubmit={submitDoc} style={{display:'flex',flexDirection:'column',gap:10}}>
+                          <input className="input-field" placeholder="Titolo documento (es. Piano Editoriale Aprile.pdf)" value={newDocTitle} onChange={e=>setNewDocTitle(e.target.value)} required />
+                          <input className="input-field" placeholder="URL documento (Google Drive, Dropbox...)" value={newDocUrl} onChange={e=>setNewDocUrl(e.target.value)} required />
+                          <button className="btn-primary" type="submit" style={{width:'auto'}}>CARICA</button>
+                        </form>
+                      </div>
+                      <div className="card" style={{padding:'28px'}}>
+                        <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:16}}>INVIATI</p>
+                        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                          {(selected.documents||[]).map(doc => (
+                            <div key={doc.id} style={{border:'1px solid #E8E4D9',padding:'14px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                              <div>
+                                <span style={{fontWeight:600,fontSize:13}}>{doc.title}</span>
+                                <span style={{marginLeft:10,color:'#888',fontSize:11}}>{doc.status}</span>
+                              </div>
+                              <button onClick={() => deleteDoc(doc.id)} style={{background:'none',border:'none',color:'#c0392b',cursor:'pointer'}}><Icon.Trash/></button>
+                            </div>
+                          ))}
+                          {(selected.documents||[]).length === 0 && <p style={{fontSize:12,color:'#888'}}>Nessun documento.</p>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* social */}
+                  {adminSubTab === 'social' && (
+                    <div>
+                      <div className="card" style={{padding:'28px',marginBottom:20}}>
+                        <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:12}}>AGGIUNGI FOTO AL FEED</p>
+                        <p style={{fontSize:11,color:'#aaa',marginBottom:12}}>Carica le foto su Google Drive, rendi pubblico il link (thumbnail) e incollalo qui.</p>
+                        <form onSubmit={addIgPhoto} style={{display:'flex',gap:10}}>
+                          <input className="input-field" placeholder="URL foto (Google Drive thumbnail, Imgur...)" value={newIgUrl} onChange={e=>setNewIgUrl(e.target.value)} required style={{flex:1}} />
+                          <button className="btn-primary" type="submit" style={{width:'auto',padding:'12px 20px'}}>+ AGGIUNGI</button>
+                        </form>
+                      </div>
+                      <div style={{display:'flex',justifyContent:'center'}}>
+                        <div style={{width:'100%',maxWidth:400,background:'#fff',border:'1px solid #E8E4D9',borderRadius:24,overflow:'hidden',boxShadow:'0 10px 40px rgba(0,0,0,0.05)'}}>
+                          <div style={{display:'flex',borderBottom:'1px solid #efefef'}}>
+                            <div style={{flex:1,padding:'12px 0',display:'flex',justifyContent:'center',borderBottom:'1px solid #000'}}>
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                            </div>
+                          </div>
+                          {(!selected.instagramFeed || selected.instagramFeed.length === 0) ? (
+                            <div style={{padding:'40px',textAlign:'center',color:'#888'}}><p style={{fontSize:13}}>Nessuna foto nel feed</p></div>
+                          ) : (
+                            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'2px',paddingBottom:'2px'}}>
+                              {selected.instagramFeed.map((img, index) => (
+                                <div key={img.id} draggable
+                                  onDragStart={() => setDraggedIdx(index)}
+                                  onDragOver={e => e.preventDefault()}
+                                  onDrop={e => handleDrop(e, index)}
+                                  onDragEnd={() => setDraggedIdx(null)}
+                                  style={{aspectRatio:'4/5',background:'#efefef',position:'relative',cursor:'grab',opacity:draggedIdx===index?0.4:1}}>
+                                  <img src={img.url} style={{width:'100%',height:'100%',objectFit:'cover',pointerEvents:'none'}} alt="Post" />
+                                  <button onClick={() => deleteIgPhoto(img.id)} style={{position:'absolute',top:4,right:4,background:'rgba(0,0,0,0.6)',color:'#fff',border:'none',width:24,height:24,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',zIndex:10}}>
+                                    <Icon.Trash/>
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* requests */}
+                  {adminSubTab === 'requests' && (
+                    <div>
+                      {(selected.requests||[]).length === 0 && <p style={{fontSize:12,color:'#888'}}>Nessuna richiesta.</p>}
+                      <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                        {(selected.requests||[]).map(r => {
+                          const [label, cls] = reqStatusLabel(r.status);
+                          return (
+                            <div key={r.id} className="card" style={{padding:'20px 24px'}}>
+                              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:10}}>
+                                <div>
+                                  <div style={{display:'flex',gap:10,alignItems:'center',marginBottom:6}}>
+                                    <span style={{fontWeight:600,fontSize:14}}>{r.type}</span>
+                                    <span className={`tag ${cls}`}>{label}</span>
+                                  </div>
+                                  <p style={{fontSize:12,color:'#555',marginBottom:4}}>{r.description}</p>
+                                  <p style={{fontSize:10,color:'#A0A09A'}}>{r.date}</p>
+                                </div>
+                                {r.status === 'pending' && (
+                                  <div style={{display:'flex',gap:8}}>
+                                    <button className="btn-success" onClick={() => { setShowApproveExtra(r.id); setApprovePrice(''); }}>APPROVA</button>
+                                    <button className="btn-danger" onClick={() => rejectRequest(r.id)}>RIFIUTA</button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* extra */}
+                  {adminSubTab === 'extra' && (
+                    <div className="card" style={{padding:'28px'}}>
+                      <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:20}}>SALDO EXTRA</p>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:16}}>
+                        <div>
+                          <p style={{fontSize:36,fontFamily:'Playfair Display,serif'}}>€{parseFloat(selected.extra_balance||0).toFixed(2)}</p>
+                          <span className={`tag ${selected.extra_status==='SALDATO'?'tag-green':'tag-red'}`}>{selected.extra_status}</span>
+                        </div>
+                        {selected.extra_balance > 0 && selected.extra_status !== 'SALDATO' && (
+                          <button className="btn-success" onClick={markExtraPaid} style={{width:'auto'}}>SEGNA COME SALDATO</button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* history */}
+                  {adminSubTab === 'history' && (
+                    <div>
+                      <div className="card" style={{padding:'28px',marginBottom:20}}>
+                        <form onSubmit={submitNote} style={{display:'flex',gap:10}}>
+                          <input className="input-field" style={{flex:1}} placeholder="Aggiungi nota..." value={noteText} onChange={e=>setNoteText(e.target.value)} />
+                          <button className="btn-ghost" type="submit" style={{width:'auto',padding:'12px 20px',whiteSpace:'nowrap'}}>+ NOTA</button>
+                        </form>
+                      </div>
+                      <div className="card" style={{padding:'28px'}}>
+                        {(selected.history||[]).map(h => (
+                          <div key={h.id} className="history-item" style={{marginBottom:14}}>
+                            <HistoryDot type={h.type} />
+                            <p style={{fontSize:12,fontWeight:500}}>{h.text}</p>
+                            <p style={{fontSize:10,color:'#A0A09A',marginTop:2}}>{h.date}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {tab === 'requests' && (
+            <div className="fade-up">
+              <h2 className="serif" style={{fontSize:30,marginBottom:28}}>Tutte le Richieste</h2>
+              <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                {clients.flatMap(c => []).length === 0 && <p style={{fontSize:12,color:'#888'}}>Carica un cliente per vederne le richieste.</p>}
+              </div>
+            </div>
+          )}
+
+          {tab === 'history' && (
+            <div className="fade-up">
+              <h2 className="serif" style={{fontSize:30,marginBottom:28}}>Cronologia Globale</h2>
+              <p style={{fontSize:12,color:'#888'}}>Seleziona un cliente dalla sezione Clienti per vederne la cronologia dettagliata.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* MODALS */}
+      <Modal open={showNewClient} onClose={() => setShowNewClient(false)} title="Nuovo Cliente">
+        <form onSubmit={addClient} style={{display:'flex',flexDirection:'column',gap:12}}>
+          {[['Nome','name','text'],['Email','email','email'],['Password temporanea','password','text'],['Piano / Contratto','plan','text'],['Mese (es. Aprile 2026)','month','text'],['Data Rinnovo','renewal','text']].map(([label,key,type]) => (
+            <div key={key}>
+              <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:4}}>{label.toUpperCase()}</label>
+              <input className="input-field" type={type} placeholder={label} value={newClient[key]} onChange={e=>setNewClient(p=>({...p,[key]:e.target.value}))} required={['name','email','password'].includes(key)} />
+            </div>
+          ))}
+          <div>
+            <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:4}}>NOTE CONTRATTO</label>
+            <textarea className="input-field" rows={3} value={newClient.contract_notes} onChange={e=>setNewClient(p=>({...p,contract_notes:e.target.value}))} style={{resize:'vertical'}} />
+          </div>
+          <button className="btn-primary" type="submit" style={{marginTop:8}}>CREA CLIENTE</button>
+        </form>
+      </Modal>
+
+      <Modal open={showEditClient} onClose={() => setShowEditClient(false)} title={`Modifica — ${selected?.name||''}`}>
+        <form onSubmit={saveEditClient} style={{display:'flex',flexDirection:'column',gap:12}}>
+          {[['Nome','name','text'],['Email','email','email'],['Piano','plan','text'],['Mese','month','text'],['Rinnovo','renewal','text']].map(([label,key,type]) => (
+            <div key={key}>
+              <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:4}}>{label.toUpperCase()}</label>
+              <input className="input-field" type={type} value={editForm[key]||''} onChange={e=>setEditForm(p=>({...p,[key]:e.target.value}))} />
+            </div>
+          ))}
+          <div>
+            <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:4}}>NOTE CONTRATTO</label>
+            <textarea className="input-field" rows={3} value={editForm.contract_notes||''} onChange={e=>setEditForm(p=>({...p,contract_notes:e.target.value}))} style={{resize:'vertical'}} />
+          </div>
+          <button className="btn-primary" type="submit" style={{marginTop:8}}>SALVA</button>
+        </form>
+      </Modal>
+
+      <Modal open={showResetPw} onClose={() => setShowResetPw(false)} title="Reset Password">
+        <form onSubmit={resetPassword} style={{display:'flex',flexDirection:'column',gap:12}}>
+          <p style={{fontSize:12,color:'#888'}}>Per sicurezza il reset password avviene da Supabase.<br/>Vai su <strong>Authentication → Users</strong>, trova il cliente e usa <strong>"Send password reset"</strong>.</p>
+          <button className="btn-primary" type="submit" style={{marginTop:8}}>OK, HO CAPITO</button>
+        </form>
+      </Modal>
+
+      <Modal open={showAddDeliverable} onClose={() => setShowAddDeliverable(false)} title="Aggiungi Deliverable">
+        <form onSubmit={addDeliverable} style={{display:'flex',flexDirection:'column',gap:12}}>
+          <div>
+            <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:4}}>NOME</label>
+            <input className="input-field" type="text" placeholder="Es. Grafiche, Video Reel..." value={newDeliverable.label} onChange={e=>setNewDeliverable(p=>({...p,label:e.target.value}))} required />
+          </div>
+          <div>
+            <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:4}}>QUANTITÀ TOTALE MENSILE</label>
+            <input className="input-field" type="number" min="1" value={newDeliverable.total} onChange={e=>setNewDeliverable(p=>({...p,total:e.target.value}))} required />
+          </div>
+          <button className="btn-primary" type="submit" style={{marginTop:8}}>AGGIUNGI</button>
+        </form>
+      </Modal>
+
+      <Modal open={!!showApproveExtra} onClose={() => setShowApproveExtra(null)} title="Approva Richiesta Extra">
+        <form onSubmit={e=>{e.preventDefault();approveRequest(showApproveExtra,approvePrice,approveMethod,approveDetails,approveNote)}} style={{display:'flex',flexDirection:'column',gap:16}}>
+          <div>
+            <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:6}}>IMPORTO EXTRA (€) — 0 se incluso nel contratto</label>
+            <input className="input-field" type="number" min="0" step="0.01" placeholder="0.00" value={approvePrice} onChange={e=>setApprovePrice(e.target.value)} />
+          </div>
+          {parseFloat(approvePrice) > 0 && (
+            <div style={{border:'1px solid #E8E4D9',padding:'20px',background:'#FDFCF8',display:'flex',flexDirection:'column',gap:14}}>
+              <div>
+                <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:6}}>METODO DI PAGAMENTO</label>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  {['Bonifico Bancario','PayPal','Stripe / Carta','Satispay','Contanti'].map(m => (
+                    <button key={m} type="button" onClick={() => setApproveMethod(m)}
+                      style={{padding:'10px 8px',fontSize:11,fontFamily:'Montserrat,sans-serif',fontWeight:600,border:approveMethod===m?'2px solid #1A1A1A':'1px solid #E8E4D9',background:approveMethod===m?'#1A1A1A':'#fff',color:approveMethod===m?'#fff':'#555',cursor:'pointer',gridColumn:m==='Contanti'?'1/-1':''}}>
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:6}}>DETTAGLI (IBAN, LINK, EMAIL)</label>
+                <input className="input-field" placeholder="..." value={approveDetails} onChange={e=>setApproveDetails(e.target.value)} />
+              </div>
+              <div>
+                <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:6}}>NOTA CAUSALE</label>
+                <input className="input-field" placeholder="..." value={approveNote} onChange={e=>setApproveNote(e.target.value)} />
+              </div>
+            </div>
+          )}
+          <button className="btn-primary" type="submit" style={{marginTop:4}}>CONFERMA APPROVAZIONE</button>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+/* ══ APP ══ */
+function App() {
+  const [session, setSession] = useState(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        const email = session.user.email;
+        if (email === ADMIN_EMAIL) {
+          setSession({ role:'admin', clientId:null, user:session.user });
+        } else {
+          fetchClientByUserId(session.user.id).then(client => {
+            if (client) setSession({ role:'client', clientId:client.id, user:session.user });
+            else setSession(null);
+            setChecking(false);
+          });
+          return;
+        }
+      }
+      setChecking(false);
+    });
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+      if (!session) setSession(null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleLogout() {
+    await sb.auth.signOut();
+    setSession(null);
+  }
+
+  if (checking) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh'}}><div className="spinner"/></div>;
+  if (!session) return <LoginPage onLogin={(role, clientId, user) => { setSession({ role, clientId, user }); }} />;
+  if (session.role === 'admin') return <AdminDashboard onLogout={handleLogout} />;
+  if (session.role === 'client') return <ClientDashboard clientId={session.clientId} onLogout={handleLogout} />;
+  return null;
+}
+
+const root = ReactDOM.createRoot(document.getElementById('mirea-root'));
+root.render(<App />);
+</script>
+</body>
+</html>
