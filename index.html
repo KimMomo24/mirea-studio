@@ -609,6 +609,7 @@ function AdminDashboard({ onLogout }) {
   const [newDocUrl, setNewDocUrl] = useState('');
   const [newIgUrl, setNewIgUrl] = useState('');
   const [draggedIdx, setDraggedIdx] = useState(null);
+  const [inviteSent, setInviteSent] = useState(null);
 
   async function reloadClients() {
     setLoading(true);
@@ -637,13 +638,16 @@ function AdminDashboard({ onLogout }) {
 
   async function addClient(e) {
     e.preventDefault();
-    // 1. crea utente Supabase Auth tramite admin
-    const { data: authData, error: authErr } = await sb.auth.signUp({ email: newClient.email, password: newClient.password });
-    if (authErr) { alert('Errore creazione utente: ' + authErr.message); return; }
-    const userId = authData.user?.id;
-    // 2. crea riga clients
-    const { data: clientRow } = await sb.from('clients').insert({
-      user_id: userId,
+    // 1. Manda invito via email — funziona con anon key
+    const { data: inviteData, error: inviteErr } = await sb.auth.signInWithOtp({
+      email: newClient.email,
+      options: { shouldCreateUser: true }
+    });
+    if (inviteErr) { alert('Errore invio invito: ' + inviteErr.message); return; }
+
+    // 2. Crea riga clients con user_id null per ora (verrà collegata al primo login)
+    const { data: clientRow, error: clientErr } = await sb.from('clients').insert({
+      user_id: null,
       name: newClient.name,
       email: newClient.email,
       plan: newClient.plan,
@@ -653,11 +657,13 @@ function AdminDashboard({ onLogout }) {
       extra_balance: 0,
       extra_status: 'SALDATO'
     }).select().single();
-    if (clientRow) {
-      await sb.from('history').insert({ client_id: clientRow.id, date: today(), text: 'Cliente creato', type: 'admin' });
-    }
+
+    if (clientErr) { alert('Errore creazione cliente: ' + clientErr.message); return; }
+    await sb.from('history').insert({ client_id: clientRow.id, date: today(), text: `Cliente creato — invito inviato a ${newClient.email}`, type: 'admin' });
+
     setShowNewClient(false);
     setNewClient({ name:'', email:'', password:'', plan:'', contract_notes:'', renewal:'', month:'' });
+    setInviteSent(newClient.email);
     reloadClients();
   }
 
@@ -1095,20 +1101,36 @@ function AdminDashboard({ onLogout }) {
       </div>
 
       {/* MODALS */}
-      <Modal open={showNewClient} onClose={() => setShowNewClient(false)} title="Nuovo Cliente">
-        <form onSubmit={addClient} style={{display:'flex',flexDirection:'column',gap:12}}>
-          {[['Nome','name','text'],['Email','email','email'],['Password temporanea','password','text'],['Piano / Contratto','plan','text'],['Mese (es. Aprile 2026)','month','text'],['Data Rinnovo','renewal','text']].map(([label,key,type]) => (
-            <div key={key}>
-              <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:4}}>{label.toUpperCase()}</label>
-              <input className="input-field" type={type} placeholder={label} value={newClient[key]} onChange={e=>setNewClient(p=>({...p,[key]:e.target.value}))} required={['name','email','password'].includes(key)} />
-            </div>
-          ))}
-          <div>
-            <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:4}}>NOTE CONTRATTO</label>
-            <textarea className="input-field" rows={3} value={newClient.contract_notes} onChange={e=>setNewClient(p=>({...p,contract_notes:e.target.value}))} style={{resize:'vertical'}} />
+      <Modal open={showNewClient} onClose={() => { setShowNewClient(false); setInviteSent(null); }} title="Nuovo Cliente">
+        {inviteSent ? (
+          <div style={{textAlign:'center',padding:'20px 0'}}>
+            <div style={{width:56,height:56,background:'#EEF2EB',border:'1px solid #C4D4BC',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:24}}>✓</div>
+            <h4 className="serif" style={{fontSize:20,marginBottom:8}}>Invito inviato!</h4>
+            <p style={{fontSize:13,color:'#555',marginBottom:6}}>Un link di accesso è stato inviato a:</p>
+            <p style={{fontSize:14,fontWeight:700,color:'#1A1A1A',marginBottom:20}}>{inviteSent}</p>
+            <p style={{fontSize:11,color:'#888',lineHeight:1.7,marginBottom:24}}>Il cliente riceve un'email con un link magico.<br/>Cliccandolo accede direttamente alla sua area riservata.<br/>Nessuna password da impostare.</p>
+            <button className="btn-primary" onClick={() => { setInviteSent(null); setShowNewClient(false); }}>CHIUDI</button>
           </div>
-          <button className="btn-primary" type="submit" style={{marginTop:8}}>CREA CLIENTE</button>
-        </form>
+        ) : (
+          <form onSubmit={addClient} style={{display:'flex',flexDirection:'column',gap:12}}>
+            <div style={{background:'#F5F4F0',border:'1px solid #E8E4D9',padding:'12px 16px',marginBottom:4}}>
+              <p style={{fontSize:11,color:'#555',lineHeight:1.6}}>
+                📧 Il cliente riceverà un <strong>link magico via email</strong> per accedere — nessuna password da gestire.
+              </p>
+            </div>
+            {[['Nome e Cognome / Ragione Sociale','name','text'],['Email cliente','email','email'],['Piano / Contratto','plan','text'],['Mese (es. Maggio 2026)','month','text'],['Data Rinnovo (es. 01 Giugno 2026)','renewal','text']].map(([label,key,type]) => (
+              <div key={key}>
+                <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:4}}>{label.toUpperCase()}</label>
+                <input className="input-field" type={type} placeholder={label} value={newClient[key]} onChange={e=>setNewClient(p=>({...p,[key]:e.target.value}))} required={['name','email'].includes(key)} />
+              </div>
+            ))}
+            <div>
+              <label style={{fontSize:9,letterSpacing:'.12em',color:'#888',display:'block',marginBottom:4}}>NOTE CONTRATTO</label>
+              <textarea className="input-field" rows={3} value={newClient.contract_notes} onChange={e=>setNewClient(p=>({...p,contract_notes:e.target.value}))} style={{resize:'vertical'}} />
+            </div>
+            <button className="btn-primary" type="submit" style={{marginTop:8}}>CREA CLIENTE E INVIA INVITO</button>
+          </form>
+        )}
       </Modal>
 
       <Modal open={showEditClient} onClose={() => setShowEditClient(false)} title={`Modifica — ${selected?.name||''}`}>
@@ -1192,25 +1214,43 @@ function App() {
   useEffect(() => {
     sb.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        const email = session.user.email;
-        if (email === ADMIN_EMAIL) {
-          setSession({ role:'admin', clientId:null, user:session.user });
-        } else {
-          fetchClientByUserId(session.user.id).then(client => {
-            if (client) setSession({ role:'client', clientId:client.id, user:session.user });
-            else setSession(null);
-            setChecking(false);
-          });
-          return;
-        }
+        handleSession(session);
+      } else {
+        setChecking(false);
       }
-      setChecking(false);
     });
-    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
-      if (!session) setSession(null);
+    const { data: { subscription } } = sb.auth.onAuthStateChange(async (_event, session) => {
+      if (!session) { setSession(null); return; }
+      await handleSession(session);
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  async function handleSession(session) {
+    const email = session.user.email;
+    if (email === ADMIN_EMAIL) {
+      setSession({ role:'admin', clientId:null, user:session.user });
+      setChecking(false);
+      return;
+    }
+    // cerca cliente per user_id
+    let client = await fetchClientByUserId(session.user.id);
+    // se non trovato, cerca per email e collega user_id (primo accesso via magic link)
+    if (!client) {
+      const { data } = await sb.from('clients').select('*').eq('email', email).is('user_id', null).single();
+      if (data) {
+        await sb.from('clients').update({ user_id: session.user.id }).eq('id', data.id);
+        client = { ...data, user_id: session.user.id };
+      }
+    }
+    if (client) {
+      setSession({ role:'client', clientId:client.id, user:session.user });
+    } else {
+      setSession(null);
+      await sb.auth.signOut();
+    }
+    setChecking(false);
+  }
 
   async function handleLogout() {
     await sb.auth.signOut();
