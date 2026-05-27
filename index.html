@@ -987,7 +987,7 @@ function App(){
   const [checking,setChecking]=useState(true);
 
   async function handleSession(s){
-    try {
+    try{
       if(!s){setSession(null);return;}
       if(s.user.email===ADMIN_EMAIL){setSession({role:'admin'});return;}
       let{data:client}=await sb.from('clients').select('*').eq('user_id',s.user.id).maybeSingle();
@@ -1001,7 +1001,7 @@ function App(){
       if(client)setSession({role:'client',clientId:client.id});
       else{setSession(null);await sb.auth.signOut();}
     }catch(e){
-      console.error('Session error:',e);
+      console.error('handleSession error:',e);
       setSession(null);
     }finally{
       setChecking(false);
@@ -1009,14 +1009,36 @@ function App(){
   }
 
   useEffect(()=>{
-    sb.auth.getSession().then(({data:{session:s}})=>handleSession(s));
-    const{data:{subscription}}=sb.auth.onAuthStateChange((_,s)=>handleSession(s));
-    return()=>subscription.unsubscribe();
+    let active=true;
+    async function init(){
+      try{
+        const result=await sb.auth.getSession();
+        if(active) await handleSession(result&&result.data?result.data.session:null);
+      }catch(e){
+        console.error('getSession error:',e);
+        if(active) setChecking(false);
+      }
+    }
+    init();
+    let sub=null;
+    try{
+      const{data}=sb.auth.onAuthStateChange((_,s)=>{if(active)handleSession(s);});
+      sub=data.subscription;
+    }catch(e){console.error('onAuthStateChange error:',e);}
+    return()=>{active=false;if(sub)sub.unsubscribe();};
   },[]);
 
-  async function logout(){await sb.auth.signOut();setSession(null);}
+  async function logout(){
+    try{await sb.auth.signOut();}catch(e){}
+    setSession(null);
+  }
 
-  if(checking)return<span className="spinner"/>;
+  if(checking)return(
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',flexDirection:'column',gap:16}}>
+      <span className="spinner"/>
+      <p style={{fontSize:11,color:'#aaa',fontFamily:'Montserrat,sans-serif'}}>Caricamento...</p>
+    </div>
+  );
   if(!session)return<Login onLogin={(role,clientId)=>setSession({role,clientId})}/>;
   if(session.role==='admin')return<AdminDash onLogout={logout}/>;
   if(session.role==='client')return<ClientDash clientId={session.clientId} onLogout={logout}/>;
