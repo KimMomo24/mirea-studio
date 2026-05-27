@@ -164,10 +164,9 @@ function Login({onLogin}){
     const user=data.user;
     if(user.email===ADMIN_EMAIL){onLogin('admin',null);setLoading(false);return;}
     // cerca per user_id
-    let {data:client}=await sb.from('clients').select('*').eq('user_id',user.id).single();
-    // se non trovato cerca per email e collega
+    let {data:client}=await sb.from('clients').select('*').eq('user_id',user.id).maybeSingle();
     if(!client){
-      const {data:byEmail}=await sb.from('clients').select('*').eq('email',user.email).single();
+      const {data:byEmail}=await sb.from('clients').select('*').eq('email',user.email).maybeSingle();
       if(byEmail){
         await sb.from('clients').update({user_id:user.id}).eq('id',byEmail.id);
         client=byEmail;
@@ -988,16 +987,25 @@ function App(){
   const [checking,setChecking]=useState(true);
 
   async function handleSession(s){
-    if(!s){setSession(null);setChecking(false);return;}
-    if(s.user.email===ADMIN_EMAIL){setSession({role:'admin'});setChecking(false);return;}
-    let{data:client}=await sb.from('clients').select('*').eq('user_id',s.user.id).single();
-    if(!client){
-      const{data:byEmail}=await sb.from('clients').select('*').eq('email',s.user.email).single();
-      if(byEmail){await sb.from('clients').update({user_id:s.user.id}).eq('id',byEmail.id);client=byEmail;}
+    try {
+      if(!s){setSession(null);return;}
+      if(s.user.email===ADMIN_EMAIL){setSession({role:'admin'});return;}
+      let{data:client}=await sb.from('clients').select('*').eq('user_id',s.user.id).maybeSingle();
+      if(!client){
+        const{data:byEmail}=await sb.from('clients').select('*').eq('email',s.user.email).maybeSingle();
+        if(byEmail){
+          await sb.from('clients').update({user_id:s.user.id}).eq('id',byEmail.id);
+          client=byEmail;
+        }
+      }
+      if(client)setSession({role:'client',clientId:client.id});
+      else{setSession(null);await sb.auth.signOut();}
+    }catch(e){
+      console.error('Session error:',e);
+      setSession(null);
+    }finally{
+      setChecking(false);
     }
-    if(client)setSession({role:'client',clientId:client.id});
-    else{setSession(null);await sb.auth.signOut();}
-    setChecking(false);
   }
 
   useEffect(()=>{
