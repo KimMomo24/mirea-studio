@@ -241,7 +241,7 @@ function ClientDash({clientId,onLogout}){
 
   const tabs=[
     {id:'overview',label:'LAVORI',icon:<Ico.Work/>},
-    {id:'docs',label:`DOCUMENTI${pendingDocs>0?` (${pendingDocs})`:''}`,icon:<Ico.File/>},
+    {id:'docs',label:'DOCUMENTI'+(pendingDocs>0?' ('+pendingDocs+')':''),icon:<Ico.File/>},
     {id:'social',label:'FEED IG',icon:<Ico.IG/>},
     {id:'requests',label:'RICHIESTE',icon:<Ico.Bell/>},
     {id:'history',label:'CRONOLOGIA',icon:<Ico.Clock/>},
@@ -309,7 +309,7 @@ function ClientDash({clientId,onLogout}){
                       <span style={{fontWeight:600,fontSize:14}}>{d.label}</span>
                       <span style={{fontSize:11,color:'#888'}}>{d.used}/{d.total}</span>
                     </div>
-                    <div className="progress-bar"><div className="progress-fill" style={{width:`${d.total>0?(d.used/d.total)*100:0}%`}}/></div>
+                    <div className="progress-bar"><div className="progress-fill" style={{width:(d.total>0?(d.used/d.total)*100:0)+'%'}}/></div>
                     <p style={{fontSize:10,color:'#A0A09A',marginTop:3}}>{d.total-d.used} rimanenti</p>
                   </div>
                 ))}
@@ -639,7 +639,7 @@ function AdminDash({onLogout}){
         <nav style={{flex:1,paddingTop:12}}>
           {[
             {id:'clients',label:'Clienti',icon:<Ico.Users/>},
-            {id:'requests',label:`Richieste${totalPending>0?` (${totalPending})`:''}`,icon:<Ico.Bell/>},
+            {id:'requests',label:'Richieste'+(totalPending>0?' ('+totalPending+')':''),icon:<Ico.Bell/>},
             {id:'history',label:'Cronologia',icon:<Ico.Clock/>},
           ].map(t=>(
             <div key={t.id} className={`sidebar-item${tab===t.id?' active':''}`} onClick={()=>{setTab(t.id);setSelId(null);}}>
@@ -707,7 +707,7 @@ function AdminDash({onLogout}){
                 <div style={{display:'flex',borderBottom:'1px solid #E8E4D9',marginBottom:24,overflowX:'auto'}}>
                   {['overview','docs','social','requests','extra','history'].map(t=>(
                     <button key={t} className={`tab-btn${subTab===t?' active':''}`} onClick={()=>setSubTab(t)}>
-                      {t.toUpperCase()}{t==='requests'&&(sel.requests||[]).filter(r=>r.status==='pending').length>0?` (${(sel.requests||[]).filter(r=>r.status==='pending').length})':''}
+                      {t.toUpperCase()}{t==='requests'&&(sel.requests||[]).filter(r=>r.status==='pending').length>0?' ('+(sel.requests||[]).filter(r=>r.status==='pending').length+')':''}
                     </button>
                   ))}
                 </div>
@@ -731,7 +731,7 @@ function AdminDash({onLogout}){
                             {d.used}<span style={{fontSize:14,color:'#ccc'}}>/{d.total}</span>
                           </div>
                           <div className="progress-bar" style={{marginBottom:10}}>
-                            <div className="progress-fill" style={{width:`${d.total>0?(d.used/d.total)*100:0}%`}}/>
+                            <div className="progress-fill" style={{width:(d.total>0?(d.used/d.total)*100:0)+'%'}}/>
                           </div>
                           <div style={{display:'flex',justifyContent:'center',gap:6,marginBottom:6}}>
                             <button className="counter-btn" onClick={()=>updateUsed(d.id,-1)}>−</button>
