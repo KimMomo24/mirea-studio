@@ -100,6 +100,10 @@ body{background:transparent;font-family:'Montserrat',sans-serif;color:#1A1A1A}
 .slide-thumb{width:56px;aspect-ratio:4/5;border-radius:6px;overflow:hidden;border:1px solid #E8E4D9;background:#f0f0f0;position:relative;flex-shrink:0}
 .slide-thumb img,.slide-thumb video{width:100%;height:100%;object-fit:cover}
 .slide-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+/* NUOVE CLASSI PER I PALLINI DI STATO FEED */
+.feed-status-dot{position:absolute;bottom:6px;right:6px;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.3);z-index:10}
+.dot-green{background:#5F6F52}
+.dot-red{background:#c0392b}
 </style>
 </head>
 <body>
@@ -206,7 +210,7 @@ function UploadBtn({label,accept,onFile,uploading,preview,isVideo}){
 }
 
 /* ── POST VIEWER ── */
-function PostViewer({post,onClose,onEdit,onDelete,clientId}){
+function PostViewer({post,onClose,onEdit,onDelete,clientId,onStatusChange}){
   const[idx,setIdx]=useState(0);
   const[showSuggest,setShowSuggest]=useState(false);
   const[note,setNote]=useState('');
@@ -221,6 +225,8 @@ function PostViewer({post,onClose,onEdit,onDelete,clientId}){
   async function sendApprove(){
     if(clientId){
       await sb.from('history').insert({client_id:clientId,date:today(),text:'Post approvato dal cliente','type':'feedback'});
+      await sb.from('instagram_feed').update({client_status:'approved', client_note:null}).eq('id',post.id);
+      if(onStatusChange) onStatusChange({...post, client_status:'approved', client_note:null});
     }
     setFeedbackSent('approved');
   }
@@ -228,6 +234,8 @@ function PostViewer({post,onClose,onEdit,onDelete,clientId}){
     if(!note.trim())return;
     if(clientId){
       await sb.from('history').insert({client_id:clientId,date:today(),text:'Modifica richiesta: '+note.trim(),'type':'warning'});
+      await sb.from('instagram_feed').update({client_status:'rejected', client_note:note.trim()}).eq('id',post.id);
+      if(onStatusChange) onStatusChange({...post, client_status:'rejected', client_note:note.trim()});
     }
     setNote('');setShowSuggest(false);setFeedbackSent('suggested');
   }
@@ -235,7 +243,7 @@ function PostViewer({post,onClose,onEdit,onDelete,clientId}){
   return(
     <div className="viewer-overlay" onClick={onClose}>
       <div className="viewer-box scale-in" onClick={e=>e.stopPropagation()}>
-        <div className="viewer-media">
+        <div className="viewer-media" style={{aspectRatio: post.aspect_ratio || '4/5'}}>
           {cur.type==='video'
             ?<video src={cur.src} controls autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
             :<img src={cur.src} alt="post"/>
@@ -255,7 +263,22 @@ function PostViewer({post,onClose,onEdit,onDelete,clientId}){
             <p style={{fontSize:13,color:'#333',lineHeight:1.7,whiteSpace:'pre-wrap'}}>{post.caption}</p>
           </div>
         )}
-        {clientId&&!feedbackSent&&(
+        
+        {/* INFO STATO (Visibile ad Admin e Client) */}
+        {post.client_status === 'approved' && (
+          <div style={{padding:'12px 16px',borderTop:'1px solid #E8E4D9',background:'#EEF2EB',textAlign:'center',fontSize:12,color:'#5F6F52',fontWeight:700}}>
+            ✓ Post approvato dal cliente
+          </div>
+        )}
+        {post.client_status === 'rejected' && (
+          <div style={{padding:'14px 16px',borderTop:'1px solid #E8E4D9',background:'#FDF0EE',fontSize:12,color:'#b94a40'}}>
+            <p style={{fontWeight:700,marginBottom:4}}>✕ Modifiche richieste dal cliente:</p>
+            <p style={{lineHeight:1.4}}>{post.client_note}</p>
+          </div>
+        )}
+
+        {/* AZIONI CLIENTE (Visibili solo al Client e se non ha ancora approvato/rifiutato) */}
+        {clientId && !post.client_status && !feedbackSent && (
           <div style={{padding:'12px 16px',borderTop:'1px solid #E8E4D9'}}>
             {!showSuggest?(
               <div style={{display:'flex',gap:8}}>
@@ -277,12 +300,7 @@ function PostViewer({post,onClose,onEdit,onDelete,clientId}){
             )}
           </div>
         )}
-        {clientId&&feedbackSent==='approved'&&(
-          <div style={{padding:'12px 16px',borderTop:'1px solid #E8E4D9',background:'#EEF2EB',textAlign:'center',fontSize:12,color:'#5F6F52',fontWeight:700}}>✓ Post approvato</div>
-        )}
-        {clientId&&feedbackSent==='suggested'&&(
-          <div style={{padding:'12px 16px',borderTop:'1px solid #E8E4D9',background:'#FDF8EE',textAlign:'center',fontSize:12,color:'#a07838',fontWeight:700}}>✓ Richiesta di modifica inviata</div>
-        )}
+        
         {(onEdit||onDelete)&&(
           <div style={{padding:'12px 16px',borderTop:'1px solid #E8E4D9',display:'flex',gap:8}}>
             {onEdit&&<button className="btn-ghost" onClick={onEdit} style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5,padding:'10px'}}><Ico.Edit/> Modifica</button>}
@@ -325,6 +343,7 @@ function FeedPostForm({clientId,post,onSave,onCancel}){
   const[videoUrl,setVideoUrl]=useState(post?post.video_url||'':'');
   const[slides,setSlides]=useState(post?[...(post.slides||[])].map(s=>({id:s.id,url:s.url})):[]);
   const[uploading,setUploading]=useState('');
+  const[aspectRatio,setAspectRatio]=useState(post?post.aspect_ratio||'4/5':'4/5');
 
   async function handleCoverFile(file){setUploading('cover');try{const url=await uploadFile(file,'covers');setCoverUrl(url);}catch(e){alert('Errore: '+e.message);}setUploading('');}
   async function handleVideoFile(file){setUploading('video');try{const url=await uploadFile(file,'videos');setVideoUrl(url);}catch(e){alert('Errore: '+e.message);}setUploading('');}
@@ -335,7 +354,7 @@ function FeedPostForm({clientId,post,onSave,onCancel}){
     if(type==='image'&&!coverUrl){alert("Carica un'immagine");return;}
     if(type==='video'&&!videoUrl){alert('Carica un video');return;}
     if(type==='carousel'&&!coverUrl){alert('Carica almeno la cover');return;}
-    await onSave({type,caption,url:coverUrl,video_url:videoUrl,slides});
+    await onSave({type,caption,url:coverUrl,video_url:videoUrl,slides,aspect_ratio:aspectRatio});
   }
 
   return(
@@ -345,6 +364,15 @@ function FeedPostForm({clientId,post,onSave,onCancel}){
           {[['image','Foto'],['video','Video/Reel'],['carousel','Carosello']].map(([v,l])=>(
             <button key={v} className={'type-btn'+(type===v?' active':'')} onClick={()=>setType(v)} type="button">
               {v==='image'&&<Ico.Photo/>}{v==='video'&&<Ico.Video/>}{v==='carousel'&&<Ico.Carousel/>}
+              <span style={{fontSize:10}}>{l}</span>
+            </button>
+          ))}
+        </div>
+      </Field>
+      <Field label="FORMATO VISUALIZZAZIONE">
+        <div style={{display:'flex',gap:8}}>
+          {[['4/5','Verticale (4:5)'],['1/1','Quadrato (1:1)'],['16/9','Orizzontale (16:9)']].map(([v,l])=>(
+            <button key={v} className={'type-btn'+(aspectRatio===v?' active':'')} onClick={()=>setAspectRatio(v)} type="button">
               <span style={{fontSize:10}}>{l}</span>
             </button>
           ))}
@@ -665,6 +693,9 @@ function ClientDash({clientId,onLogout}){
                           :<img src={thumb} alt=""/>)}
                         {post.type==='video'&&<div className="feed-badge"><Ico.Play/></div>}
                         {post.type==='carousel'&&<div className="feed-badge">≡</div>}
+                        {/* PALLINI DI STATO SULLA GRIGLIA */}
+                        {post.client_status==='approved'&&<div className="feed-status-dot dot-green"/>}
+                        {post.client_status==='rejected'&&<div className="feed-status-dot dot-red"/>}
                       </div>
                     );
                   })}
@@ -730,7 +761,13 @@ function ClientDash({clientId,onLogout}){
         )}
       </div>
 
-      {viewPost&&<PostViewer post={viewPost} onClose={()=>setViewPost(null)} clientId={clientId}/>}
+      {viewPost&&<PostViewer post={viewPost} onClose={()=>setViewPost(null)} clientId={clientId} 
+        onStatusChange={async (upd)=>{
+          setViewPost(upd);
+          const f=await fetchFeed(clientId,true);
+          setFeed(f);
+        }}
+      />}
 
       <Modal open={!!viewDoc} onClose={()=>setViewDoc(null)} title={viewDoc?viewDoc.title||'':''}>
         {viewDoc&&(
@@ -880,14 +917,14 @@ function AdminDash({onLogout}){
   }
   async function delDoc(id){await sb.from('documents').delete().eq('id',id);loadSel(selId);}
 
-  async function saveFeedPost({type,caption,url,video_url,slides}){
+  async function saveFeedPost({type,caption,url,video_url,slides,aspect_ratio}){
     const pos=feed.length;
     if(editPost){
-      await sb.from('instagram_feed').update({type,caption,url,video_url}).eq('id',editPost.id);
+      await sb.from('instagram_feed').update({type,caption,url,video_url,aspect_ratio}).eq('id',editPost.id);
       await sb.from('feed_slides').delete().eq('post_id',editPost.id);
       if(slides&&slides.length>0) await sb.from('feed_slides').insert(slides.map((s,i)=>({post_id:editPost.id,url:s.url,position:i})));
     }else{
-      const{data:row}=await sb.from('instagram_feed').insert({client_id:selId,type,caption,url,video_url,published:false,position:pos}).select().maybeSingle();
+      const{data:row}=await sb.from('instagram_feed').insert({client_id:selId,type,caption,url,video_url,published:false,position:pos,aspect_ratio}).select().maybeSingle();
       if(row&&slides&&slides.length>0) await sb.from('feed_slides').insert(slides.map((s,i)=>({post_id:row.id,url:s.url,position:i})));
     }
     setShowNewPost(false);setEditPost(null);
@@ -1112,6 +1149,9 @@ function AdminDash({onLogout}){
                                 {!post.published&&<div className="feed-draft">BOZZA</div>}
                                 {post.type==='video'&&<div className="feed-badge"><Ico.Play/></div>}
                                 {post.type==='carousel'&&<div className="feed-badge">≡</div>}
+                                {/* PALLINI DI STATO SULLA GRIGLIA */}
+                                {post.client_status==='approved'&&<div className="feed-status-dot dot-green"/>}
+                                {post.client_status==='rejected'&&<div className="feed-status-dot dot-red"/>}
                               </div>
                             );
                           })}
@@ -1278,6 +1318,11 @@ function AdminDash({onLogout}){
       {viewPost&&<PostViewer post={viewPost} onClose={()=>setViewPost(null)}
         onEdit={()=>{setEditPost(viewPost);setViewPost(null);setShowNewPost(true);}}
         onDelete={()=>{if(confirm('Eliminare?')){deleteFeedPost(viewPost.id);setViewPost(null);}}}
+        onStatusChange={async (upd)=>{
+          setViewPost(upd);
+          const f=await fetchFeed(selId,false);
+          setFeed(f);
+        }}
       />}
     </div>
   );
