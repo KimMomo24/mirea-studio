@@ -40,8 +40,8 @@ body{background:#FDFCF8;font-family:'Montserrat',sans-serif;color:#1A1A1A}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:#F5F4F0}
 ::-webkit-scrollbar-thumb{background:#D4CFC4;border-radius:2px}
-.modal-overlay{position:fixed;inset:0;background:rgba(26,26,26,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
-.modal-box{background:#fff;border:1px solid #D4CFC4;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:32px 36px;position:relative}
+.modal-overlay{position:fixed;inset:0;background:rgba(26,26,26,.6);z-index:1000;display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(4px)}
+.modal-box{background:#fff;border:1px solid #D4CFC4;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:24px 20px;position:relative;border-radius:16px 16px 0 0}
 .sidebar{background:#1A1A1A;height:100vh;width:240px;flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;overflow-y:auto}
 .sidebar-item{padding:12px 24px;font-size:11px;letter-spacing:.12em;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s;text-transform:uppercase;color:#A0A09A}
 .sidebar-item:hover{background:rgba(255,255,255,.06);color:#fff}
@@ -58,6 +58,24 @@ body{background:#FDFCF8;font-family:'Montserrat',sans-serif;color:#1A1A1A}
 .info-box{background:#F5F4F0;border-left:3px solid #D4CFC4;padding:14px 18px;font-size:11px;color:#666;line-height:1.7}
 .upload-area{border:2px dashed #D4CFC4;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#FDFCF8}
 .upload-area:hover{border-color:#1A1A1A;background:#F5F4F0}
+/* mobile nav bar (admin) */
+.mobile-nav{display:none;background:#1A1A1A;padding:0;position:sticky;top:0;z-index:200}
+.mobile-nav-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 16px}
+.mobile-nav-items{display:flex;border-top:1px solid rgba(255,255,255,.08)}
+.mobile-nav-item{flex:1;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:#A0A09A;font-size:8px;letter-spacing:.1em;font-weight:700;text-transform:uppercase;border:none;background:none;font-family:'Montserrat',sans-serif}
+.mobile-nav-item.active{color:#A8BC9A}
+/* RESPONSIVE */
+@media(max-width:640px){
+  .modal-overlay{align-items:flex-end;padding:0}
+  .modal-box{border-radius:16px 16px 0 0;max-height:88vh;padding:24px 16px}
+  .sidebar{display:none}
+  .mobile-nav{display:block}
+  .admin-main{padding:20px 14px!important}
+  .client-content{padding:24px 14px!important}
+  .client-header{padding:12px 16px!important}
+  .viewer-box{border-radius:16px 16px 0 0;max-height:92vh}
+  .feed-grid{gap:1px}
+}
 .upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .feed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .feed-cell{aspect-ratio:4/5;position:relative;background:#efefef;overflow:hidden;cursor:pointer}
@@ -89,7 +107,7 @@ body{background:#FDFCF8;font-family:'Montserrat',sans-serif;color:#1A1A1A}
 const {useState,useEffect} = React;
 const {createClient} = supabase;
 const SB_URL = 'https://klczaixlnevzellhqgob.supabase.co';
-const SB_KEY = 'sb_publishable_b6fDtA5UYnHfvZQUw4jQ3w_lCZjqipD';
+const SB_KEY = 'sb_publishable_IsysQXRyOInjSdnnH9TzPQ_Q1bgTKpw';
 const sb = createClient(SB_URL, SB_KEY);
 const ADMIN_EMAIL = 'admin@mirea.studio';
 const BUCKET = 'feed-media';
@@ -489,14 +507,14 @@ function ClientDash({clientId,onLogout}){
   return(
     <div style={{minHeight:'100vh',background:'#FDFCF8'}}>
       {/* STICKY HEADER */}
-      <div style={{background:'#fff',borderBottom:'1px solid #E8E4D9',padding:'14px 28px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100}}>
+      <div style={{background:'#fff',borderBottom:'1px solid #E8E4D9',padding:'14px 28px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100}} className="client-header">
         <Logo/>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
           <span style={{fontSize:12,color:'#888'}}>{c.name}</span>
           <button onClick={onLogout} style={{background:'none',border:'none',cursor:'pointer',color:'#888',display:'flex',alignItems:'center',gap:5,fontSize:11,fontFamily:'Montserrat,sans-serif'}}><Ico.Out/> ESCI</button>
         </div>
       </div>
-      <div style={{maxWidth:820,margin:'0 auto',padding:'36px 20px'}}>
+      <div style={{maxWidth:820,margin:'0 auto',padding:'36px 20px'}} className="client-content">
         <div className="fade-up" style={{marginBottom:32}}>
           <h2 className="serif" style={{fontSize:32,marginBottom:4}}>Ciao, {c.name.split(' ')[0]}.</h2>
           <p style={{fontSize:12,color:'#888'}}>{c.plan} · Rinnovo: {c.renewal}</p>
@@ -861,7 +879,21 @@ function AdminDash({onLogout}){
         </div>
       </div>
 
-      <div style={{flex:1,overflow:'auto',padding:'32px 36px',maxWidth:1000}}>
+      <div className="mobile-nav">
+        <div className="mobile-nav-inner">
+          <p className="serif" style={{fontSize:14,color:'#fff'}}>Mirea Studio</p>
+          <button onClick={onLogout} style={{background:'none',border:'none',color:'#666',fontSize:11,cursor:'pointer',fontFamily:'Montserrat,sans-serif',display:'flex',alignItems:'center',gap:5}}><Ico.Out/> Esci</button>
+        </div>
+        <div className="mobile-nav-items">
+          {[{id:'clients',label:'Clienti',icon:<Ico.Users/>},{id:'requests',label:'Richieste'+(totalPending>0?' ('+totalPending+')':''),icon:<Ico.Bell/>},{id:'history',label:'Crono',icon:<Ico.Clock/>}].map(t=>(
+            <button key={t.id} className={'mobile-nav-item'+(tab===t.id?' active':'')} onClick={()=>{setTab(t.id);setSelId(null);}}>
+              {t.icon}{t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{flex:1,overflow:'auto',padding:'32px 36px',maxWidth:1000}} className="admin-main">
 
         {tab==='clients'&&!selId&&(
           <div className="fade-up">
