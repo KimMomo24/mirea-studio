@@ -1316,7 +1316,12 @@ function App(){
     return()=>{active=false;if(sub)sub.unsubscribe();};
   },[]);
 
-  async function logout(){try{await sb.auth.signOut();}catch(e){}setSession(null);}
+  async function logout(){
+    try{await sb.auth.signOut();}catch(e){}
+    setSession(null);
+    // REINDIRIZZAMENTO AL SITO DOPO IL LOGOUT
+    window.location.href = 'https://www.mireastudio.it';
+  }
 
   if(checking)return(
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',flexDirection:'column',gap:16}}>
@@ -1324,7 +1329,20 @@ function App(){
       <p style={{fontSize:11,color:'#aaa',fontFamily:'Montserrat,sans-serif'}}>Caricamento...</p>
     </div>
   );
+  
   if(!session)return<Login onLogin={(role,clientId)=>setSession({role,clientId})}/>;
+
+  /* BLOCCO ANTI-GLITCH: Se l'utente è loggato ma siamo ancora nel mini-popup, mostra solo un caricamento e forza il redirect */
+  if(window.self !== window.top) {
+    window.top.location.href = window.location.href;
+    return(
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',flexDirection:'column',gap:16}}>
+        <span className="spinner"/>
+        <p style={{fontSize:11,color:'#aaa',fontFamily:'Montserrat,sans-serif'}}>Accesso in corso...</p>
+      </div>
+    );
+  }
+
   if(session.role==='admin')return<AdminDash onLogout={logout}/>;
   if(session.role==='client')return<ClientDash clientId={session.clientId} onLogout={logout}/>;
   return null;
