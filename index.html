@@ -1006,4 +1006,231 @@ function AdminDash({onLogout}){
                                 onClick={()=>{if(dragIdx===null)setViewPost(post);}}
                                 style={{opacity:dragIdx===idx?0.4:1,cursor:dragIdx!==null?'grabbing':'pointer'}}>
                                 {thumb?(post.type==='video'&&!post.url
-                                  ?<video src={post.video_url} muted style={{width:'100%',height:'100%',objectFit:'cover',p
+                                  ?<video src={post.video_url} muted style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/>
+                                  :<img src={thumb} alt=""/>)
+                                :<div style={{position:'absolute',inset:0,background:'#F5F4F0',display:'flex',alignItems:'center',justifyContent:'center',color:'#ccc',fontSize:10}}>No img</div>}
+                                {!post.published&&<div className="feed-draft">BOZZA</div>}
+                                {post.type==='video'&&<div className="feed-badge"><Ico.Play/></div>}
+                                {post.type==='carousel'&&<div className="feed-badge">≡</div>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      }
+                    </IGWrapper>
+                  </div>
+                )}
+
+                {subTab==='requests'&&(
+                  <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                    {(sel.requests||[]).length===0&&<p style={{fontSize:12,color:'#888'}}>Nessuna richiesta.</p>}
+                    {(sel.requests||[]).map(r=>{
+                      const[lbl,cls]=rl(r.status);
+                      return(
+                        <div key={r.id} className="card" style={{padding:'18px 20px'}}>
+                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:10}}>
+                            <div>
+                              <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}>
+                                <span style={{fontWeight:600,fontSize:13}}>{r.type}</span>
+                                <span className={'tag '+cls}>{lbl}</span>
+                              </div>
+                              <p style={{fontSize:11,color:'#555',marginBottom:2}}>{r.description}</p>
+                              <p style={{fontSize:10,color:'#A0A09A'}}>{r.date}</p>
+                            </div>
+                            {r.status==='pending'&&(
+                              <div style={{display:'flex',gap:8}}>
+                                <button className="btn-success" onClick={()=>setMApprove(r.id)}>APPROVA</button>
+                                <button className="btn-danger" onClick={()=>rejectReq(r.id)}>RIFIUTA</button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {subTab==='extra'&&(
+                  <div className="card" style={{padding:'24px'}}>
+                    <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:16}}>SALDO EXTRA</p>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
+                      <div>
+                        <p style={{fontSize:34,fontFamily:'Playfair Display,serif'}}>€{parseFloat(sel.extra_balance||0).toFixed(2)}</p>
+                        <span className={'tag '+(sel.extra_status==='SALDATO'?'tag-green':'tag-red')}>{sel.extra_status}</span>
+                      </div>
+                      {sel.extra_balance>0&&sel.extra_status!=='SALDATO'&&(
+                        <button className="btn-success" onClick={markPaid} style={{width:'auto'}}>SEGNA COME SALDATO</button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {subTab==='history'&&(
+                  <div>
+                    <div className="card" style={{padding:'20px',marginBottom:14}}>
+                      <form onSubmit={addNote} style={{display:'flex',gap:8}}>
+                        <input className="input-field" style={{flex:1}} placeholder="Aggiungi nota..." value={fNote} onChange={e=>setFNote(e.target.value)}/>
+                        <button className="btn-ghost" type="submit" style={{width:'auto',padding:'12px 16px',whiteSpace:'nowrap'}}>+ NOTA</button>
+                      </form>
+                    </div>
+                    <div className="card" style={{padding:'24px'}}>
+                      {(sel.history||[]).length===0&&<p style={{fontSize:12,color:'#888'}}>Nessuna attività.</p>}
+                      {(sel.history||[]).map(h=>(
+                        <div key={h.id} className="history-item">
+                          <HDot type={h.type}/>
+                          <p style={{fontSize:12,fontWeight:500}}>{h.text}</p>
+                          <p style={{fontSize:10,color:'#A0A09A',marginTop:2}}>{h.date}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {tab==='requests'&&(
+          <div className="fade-up">
+            <h2 className="serif" style={{fontSize:28,marginBottom:24}}>Tutte le Richieste</h2>
+            {clients.every(c=>c._pending===0)&&<p style={{fontSize:12,color:'#888'}}>Nessuna richiesta in attesa.</p>}
+            {clients.filter(c=>c._pending>0).map(c=>(
+              <div key={c.id} style={{marginBottom:20}}>
+                <p style={{fontSize:11,fontWeight:700,letterSpacing:'.1em',color:'#888',marginBottom:8}}>{c.name.toUpperCase()}</p>
+                <button className="btn-ghost" onClick={()=>{setSelId(c.id);setSubTab('requests');setTab('clients');}} style={{width:'auto',fontSize:10,padding:'8px 16px'}}>
+                  GESTISCI {c._pending} RICHIESTA{c._pending>1?'E':''}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab==='history'&&(
+          <div className="fade-up">
+            <h2 className="serif" style={{fontSize:28,marginBottom:24}}>Cronologia</h2>
+            <p style={{fontSize:12,color:'#888'}}>Seleziona un cliente per vedere la cronologia.</p>
+          </div>
+        )}
+      </div>
+
+      <Modal open={mNewClient} onClose={()=>setMNewClient(false)} title="Nuovo Cliente">
+        <div className="info-box" style={{marginBottom:16}}>
+          Crea prima l'utente su <strong>Supabase → Authentication → Users → Add user</strong>, poi compila qui.
+        </div>
+        <form onSubmit={createClient} style={{display:'flex',flexDirection:'column',gap:0}}>
+          <Field label="NOME"><input className="input-field" placeholder="Es. Giulia Bianchi" value={fClient.name} onChange={e=>setFClient(p=>({...p,name:e.target.value}))} required/></Field>
+          <Field label="EMAIL (uguale a Supabase Auth)"><input className="input-field" type="email" placeholder="giulia@esempio.it" value={fClient.email} onChange={e=>setFClient(p=>({...p,email:e.target.value}))} required/></Field>
+          <Field label="PIANO"><input className="input-field" placeholder="Es. Contratto €400/mese" value={fClient.plan} onChange={e=>setFClient(p=>({...p,plan:e.target.value}))}/></Field>
+          <Field label="MESE"><input className="input-field" placeholder="Es. Maggio 2026" value={fClient.month} onChange={e=>setFClient(p=>({...p,month:e.target.value}))}/></Field>
+          <Field label="RINNOVO"><input className="input-field" placeholder="Es. 01 Giugno 2026" value={fClient.renewal} onChange={e=>setFClient(p=>({...p,renewal:e.target.value}))}/></Field>
+          <Field label="NOTE CONTRATTO"><textarea className="input-field" rows={3} value={fClient.contract_notes} onChange={e=>setFClient(p=>({...p,contract_notes:e.target.value}))} style={{resize:'vertical'}}/></Field>
+          <button className="btn-primary" type="submit" style={{marginTop:8}}>CREA PROFILO</button>
+        </form>
+      </Modal>
+
+      <Modal open={mEditClient} onClose={()=>setMEditClient(false)} title={'Modifica — '+(sel?sel.name||'':'')}>
+        <form onSubmit={saveEdit} style={{display:'flex',flexDirection:'column',gap:0}}>
+          {[['NOME','name','text'],['EMAIL','email','email'],['PIANO','plan','text'],['MESE','month','text'],['RINNOVO','renewal','text']].map(([l,k,t])=>(
+            <Field key={k} label={l}><input className="input-field" type={t} value={fEdit[k]||''} onChange={e=>setFEdit(p=>({...p,[k]:e.target.value}))}/></Field>
+          ))}
+          <Field label="NOTE"><textarea className="input-field" rows={3} value={fEdit.contract_notes||''} onChange={e=>setFEdit(p=>({...p,contract_notes:e.target.value}))} style={{resize:'vertical'}}/></Field>
+          <button className="btn-primary" type="submit" style={{marginTop:8}}>SALVA</button>
+        </form>
+      </Modal>
+
+      <Modal open={mAddDel} onClose={()=>setMAddDel(false)} title="Aggiungi Deliverable">
+        <form onSubmit={addDel} style={{display:'flex',flexDirection:'column',gap:0}}>
+          <Field label="NOME"><input className="input-field" placeholder="Es. Grafiche, Video Reel" value={fDel.label} onChange={e=>setFDel(p=>({...p,label:e.target.value}))} required/></Field>
+          <Field label="QUANTITÀ TOTALE"><input className="input-field" type="number" min="1" value={fDel.total} onChange={e=>setFDel(p=>({...p,total:e.target.value}))} required/></Field>
+          <button className="btn-primary" type="submit" style={{marginTop:8}}>AGGIUNGI</button>
+        </form>
+      </Modal>
+
+      <Modal open={!!mApprove} onClose={()=>setMApprove(null)} title="Approva Richiesta">
+        <form onSubmit={approveReq} style={{display:'flex',flexDirection:'column',gap:0}}>
+          <Field label="IMPORTO EXTRA (€) — 0 se incluso">
+            <input className="input-field" type="number" min="0" step="0.01" placeholder="0.00" value={fApprove.price} onChange={e=>setFApprove(p=>({...p,price:e.target.value}))}/>
+          </Field>
+          {parseFloat(fApprove.price)>0&&(
+            <>
+              <Field label="METODO">
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  {['Bonifico Bancario','PayPal','Stripe / Carta','Satispay','Contanti'].map(m=>(
+                    <button key={m} type="button" onClick={()=>setFApprove(p=>({...p,method:m}))}
+                      style={{padding:'9px 6px',fontSize:11,fontFamily:'Montserrat,sans-serif',fontWeight:600,border:fApprove.method===m?'2px solid #1A1A1A':'1px solid #E8E4D9',background:fApprove.method===m?'#1A1A1A':'#fff',color:fApprove.method===m?'#fff':'#555',cursor:'pointer',gridColumn:m==='Contanti'?'1/-1':''}}>
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <Field label="DETTAGLI"><input className="input-field" value={fApprove.details} onChange={e=>setFApprove(p=>({...p,details:e.target.value}))}/></Field>
+              <Field label="CAUSALE"><input className="input-field" value={fApprove.note} onChange={e=>setFApprove(p=>({...p,note:e.target.value}))}/></Field>
+            </>
+          )}
+          <button className="btn-primary" type="submit" style={{marginTop:12}}>CONFERMA</button>
+        </form>
+      </Modal>
+
+      <Modal open={showNewPost} onClose={()=>{setShowNewPost(false);setEditPost(null);}} title={editPost?'Modifica Post':'Nuovo Post'} wide>
+        <FeedPostForm clientId={selId} post={editPost} onSave={saveFeedPost} onCancel={()=>{setShowNewPost(false);setEditPost(null);}}/>
+      </Modal>
+
+      {viewPost&&<PostViewer post={viewPost} onClose={()=>setViewPost(null)}
+        onEdit={()=>{setEditPost(viewPost);setViewPost(null);setShowNewPost(true);}}
+        onDelete={()=>{if(confirm('Eliminare?')){deleteFeedPost(viewPost.id);setViewPost(null);}}}
+      />}
+    </div>
+  );
+}
+
+/* ══ APP ══ */
+function App(){
+  const[session,setSession]=useState(null);
+  const[checking,setChecking]=useState(true);
+
+  async function handleSession(s){
+    try{
+      if(!s){setSession(null);return;}
+      if(s.user.email===ADMIN_EMAIL){setSession({role:'admin'});return;}
+      let{data:client}=await sb.from('clients').select('*').eq('user_id',s.user.id).maybeSingle();
+      if(!client){
+        const{data:byEmail}=await sb.from('clients').select('*').eq('email',s.user.email).maybeSingle();
+        if(byEmail){await sb.from('clients').update({user_id:s.user.id}).eq('id',byEmail.id);client=byEmail;}
+      }
+      if(client)setSession({role:'client',clientId:client.id});
+      else{setSession(null);await sb.auth.signOut();}
+    }catch(e){console.error('handleSession:',e);setSession(null);}
+    finally{setChecking(false);}
+  }
+
+  useEffect(()=>{
+    let active=true;
+    async function init(){
+      try{const result=await sb.auth.getSession();if(active)await handleSession(result&&result.data?result.data.session:null);}
+      catch(e){console.error(e);if(active)setChecking(false);}
+    }
+    init();
+    let sub=null;
+    try{const{data}=sb.auth.onAuthStateChange((_,s)=>{if(active)handleSession(s);});sub=data.subscription;}
+    catch(e){console.error(e);}
+    return()=>{active=false;if(sub)sub.unsubscribe();};
+  },[]);
+
+  async function logout(){try{await sb.auth.signOut();}catch(e){}setSession(null);}
+
+  if(checking)return(
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',flexDirection:'column',gap:16}}>
+      <span className="spinner"/>
+      <p style={{fontSize:11,color:'#aaa',fontFamily:'Montserrat,sans-serif'}}>Caricamento...</p>
+    </div>
+  );
+  if(!session)return<Login onLogin={(role,clientId)=>setSession({role,clientId})}/>;
+  if(session.role==='admin')return<AdminDash onLogout={logout}/>;
+  if(session.role==='client')return<ClientDash clientId={session.clientId} onLogout={logout}/>;
+  return null;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
