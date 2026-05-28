@@ -1261,6 +1261,9 @@ function AdminDash({onLogout}){
         onEdit={()=>{setEditPost(viewPost);setViewPost(null);setShowNewPost(true);}}
         onDelete={()=>{if(confirm('Eliminare?')){deleteFeedPost(viewPost.id);setViewPost(null);}}}
       />}
+    </div>
+  );
+}
 
 /* ══ APP ══ */
 function App(){
