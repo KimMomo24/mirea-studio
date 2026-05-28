@@ -56,31 +56,25 @@ body{background:#FDFCF8;font-family:'Montserrat',sans-serif;color:#1A1A1A}
 .tab-btn{background:none;border:none;cursor:pointer;padding:10px 16px;font-size:10px;letter-spacing:.14em;font-weight:700;font-family:'Montserrat',sans-serif;color:#A0A09A;border-bottom:2px solid transparent;transition:color .2s;white-space:nowrap}
 .tab-btn.active{color:#1A1A1A;border-bottom-color:#1A1A1A}
 .info-box{background:#F5F4F0;border-left:3px solid #D4CFC4;padding:14px 18px;font-size:11px;color:#666;line-height:1.7}
-/* upload area */
 .upload-area{border:2px dashed #D4CFC4;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#FDFCF8}
 .upload-area:hover{border-color:#1A1A1A;background:#F5F4F0}
 .upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-/* feed grid */
 .feed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .feed-cell{aspect-ratio:4/5;position:relative;background:#efefef;overflow:hidden;cursor:pointer}
 .feed-cell img,.feed-cell video{width:100%;height:100%;object-fit:cover;display:block}
-.feed-cell-overlay{position:absolute;inset:0;background:rgba(0,0,0,.0);transition:background .2s;display:flex;align-items:center;justify-content:center}
-.feed-cell:hover .feed-cell-overlay{background:rgba(0,0,0,.25)}
 .feed-badge{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);color:#fff;border-radius:3px;font-size:9px;padding:2px 5px;font-weight:700}
 .feed-draft{position:absolute;top:5px;left:5px;background:rgba(255,165,0,.85);color:#fff;border-radius:3px;font-size:9px;padding:2px 5px;font-weight:700}
-/* post viewer overlay */
 .viewer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px}
 .viewer-box{background:#fff;border-radius:12px;width:100%;max-width:480px;max-height:94vh;overflow:hidden;display:flex;flex-direction:column}
 .viewer-media{position:relative;aspect-ratio:4/5;background:#000;overflow:hidden;flex-shrink:0}
 .viewer-media img,.viewer-media video{width:100%;height:100%;object-fit:cover}
 .car-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;z-index:5}
-.car-btn.prev{left:8px}
-.car-btn.next{right:8px}
+.car-btn.prev{left:8px}.car-btn.next{right:8px}
 .car-btn:disabled{opacity:.2;pointer-events:none}
 .car-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:4px;z-index:5}
 .car-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.5)}
 .car-dot.active{background:#fff;width:14px;border-radius:3px}
-.viewer-info{padding:14px 16px;overflow-y:auto}
+.viewer-info{padding:14px 16px;overflow-y:auto;flex:1}
 .type-btn{flex:1;padding:10px;border:1px solid #D4CFC4;border-radius:8px;background:#fff;cursor:pointer;font-size:11px;font-family:'Montserrat',sans-serif;font-weight:600;color:#888;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .15s}
 .type-btn.active{border-color:#1A1A1A;background:#1A1A1A;color:#fff}
 .slide-thumb-row{display:flex;gap:6px;overflow-x:auto;padding:4px 0}
@@ -92,7 +86,7 @@ body{background:#FDFCF8;font-family:'Montserrat',sans-serif;color:#1A1A1A}
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const {useState,useEffect,useRef} = React;
+const {useState,useEffect} = React;
 const {createClient} = supabase;
 const SB_URL = 'https://klczaixlnevzellhqgob.supabase.co';
 const SB_KEY = 'sb_publishable_IsysQXRyOInjSdnnH9TzPQ_Q1bgTKpw';
@@ -102,18 +96,16 @@ const BUCKET = 'feed-media';
 
 function today(){return new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});}
 
-/* ── STORAGE UPLOAD ── */
-async function uploadFile(file, folder){
-  const ext = file.name.split('.').pop();
-  const path = folder+'/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+ext;
-  const {data,error} = await sb.storage.from(BUCKET).upload(path, file, {upsert:true});
-  if(error) throw error;
-  const {data:{publicUrl}} = sb.storage.from(BUCKET).getPublicUrl(data.path);
+async function uploadFile(file,folder){
+  const ext=file.name.split('.').pop();
+  const path=folder+'/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+ext;
+  const{data,error}=await sb.storage.from(BUCKET).upload(path,file,{upsert:true});
+  if(error)throw error;
+  const{data:{publicUrl}}=sb.storage.from(BUCKET).getPublicUrl(data.path);
   return publicUrl;
 }
 
-/* ── ICONS ── */
-const Ico = {
+const Ico={
   Out:()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
   Plus:({s=15})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
   Back:()=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>,
@@ -133,9 +125,10 @@ const Ico = {
   EyeOff:()=><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
   Play:()=><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
   Upload:()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+  Check:()=><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>,
+  Pen:()=><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
 };
 
-/* ── HELPERS ── */
 function Modal({open,onClose,title,children,wide}){
   if(!open)return null;
   return(
@@ -161,7 +154,7 @@ function Logo(){
   );
 }
 function HDot({type}){
-  const c={delivery:'#5F6F52',request:'#3a4a7a',extra:'#a07838',info:'#888',admin:'#1A1A1A',warning:'#b94a40'};
+  const c={delivery:'#5F6F52',request:'#3a4a7a',extra:'#a07838',info:'#888',admin:'#1A1A1A',warning:'#b94a40',feedback:'#5F6F52'};
   return <span style={{width:7,height:7,borderRadius:'50%',background:c[type]||'#888',position:'absolute',left:-4.5,top:8}}/>;
 }
 function Field({label,children}){
@@ -185,33 +178,43 @@ function UploadBtn({label,accept,onFile,uploading,preview,isVideo}){
       </div>
       {preview&&(
         <div style={{marginTop:8,borderRadius:8,overflow:'hidden',aspectRatio:'4/5',background:'#000',maxWidth:120}}>
-          {isVideo
-            ?<video src={preview} style={{width:'100%',height:'100%',objectFit:'cover'}} muted/>
-            :<img src={preview} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>
-          }
+          {isVideo?<video src={preview} style={{width:'100%',height:'100%',objectFit:'cover'}} muted/>:<img src={preview} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>}
         </div>
       )}
     </div>
   );
 }
 
-/* ── POST VIEWER (client + admin preview) ── */
-function PostViewer({post,onClose,onEdit,onDelete}){
-  const [idx,setIdx]=useState(0);
+/* ── POST VIEWER ── */
+function PostViewer({post,onClose,onEdit,onDelete,clientId}){
+  const[idx,setIdx]=useState(0);
+  const[showSuggest,setShowSuggest]=useState(false);
+  const[note,setNote]=useState('');
+  const[feedbackSent,setFeedbackSent]=useState('');
   if(!post)return null;
   const slides=[];
-  if(post.type==='video'){
-    slides.push({type:'video',src:post.video_url,cover:post.url});
-  } else {
-    slides.push({type:'image',src:post.url});
-  }
+  if(post.type==='video') slides.push({type:'video',src:post.video_url});
+  else slides.push({type:'image',src:post.url});
   (post.slides||[]).forEach(s=>slides.push({type:'image',src:s.url}));
   const cur=slides[idx]||slides[0];
+
+  async function sendApprove(){
+    if(clientId){
+      await sb.from('history').insert({client_id:clientId,date:today(),text:'Post approvato dal cliente','type':'feedback'});
+    }
+    setFeedbackSent('approved');
+  }
+  async function sendSuggest(){
+    if(!note.trim())return;
+    if(clientId){
+      await sb.from('history').insert({client_id:clientId,date:today(),text:'Modifica richiesta: '+note.trim(),'type':'warning'});
+    }
+    setNote('');setShowSuggest(false);setFeedbackSent('suggested');
+  }
 
   return(
     <div className="viewer-overlay" onClick={onClose}>
       <div className="viewer-box scale-in" onClick={e=>e.stopPropagation()}>
-        {/* media */}
         <div className="viewer-media">
           {cur.type==='video'
             ?<video src={cur.src} controls autoPlay playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
@@ -221,21 +224,47 @@ function PostViewer({post,onClose,onEdit,onDelete}){
             <>
               <button className="car-btn prev" onClick={()=>setIdx(Math.max(0,idx-1))} disabled={idx===0}>&#8249;</button>
               <button className="car-btn next" onClick={()=>setIdx(Math.min(slides.length-1,idx+1))} disabled={idx===slides.length-1}>&#8250;</button>
-              <div className="car-dots">
-                {slides.map((_,i)=><div key={i} className={'car-dot'+(i===idx?' active':'')}/>)}
-              </div>
+              <div className="car-dots">{slides.map((_,i)=><div key={i} className={'car-dot'+(i===idx?' active':'')}/>)}</div>
             </>
           )}
-          {post.type==='video'&&idx===0&&<div style={{position:'absolute',top:10,left:10,background:'rgba(0,0,0,.6)',color:'#fff',fontSize:10,padding:'2px 7px',borderRadius:4,fontWeight:700}}>REEL</div>}
           {post.type==='carousel'&&<div style={{position:'absolute',top:10,right:10,background:'rgba(0,0,0,.6)',color:'#fff',fontSize:10,padding:'2px 7px',borderRadius:4,fontWeight:700}}>{idx+1}/{slides.length}</div>}
-          <button onClick={onClose} style={{position:'absolute',top:10,right:10,background:'rgba(0,0,0,.5)',border:'none',borderRadius:'50%',width:28,height:28,cursor:'pointer',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',zIndex:10}}><Ico.X s={14}/></button>
+          <button onClick={onClose} style={{position:'absolute',top:10,right:post.type==='carousel'?10:10,background:'rgba(0,0,0,.5)',border:'none',borderRadius:'50%',width:28,height:28,cursor:'pointer',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',zIndex:10,top:10,right:slides.length>1?45:10}}><Ico.X s={14}/></button>
         </div>
-        {/* caption */}
         {post.caption&&(
           <div className="viewer-info">
             <p style={{fontSize:13,color:'#333',lineHeight:1.7,whiteSpace:'pre-wrap'}}>{post.caption}</p>
           </div>
         )}
+        {/* client feedback */}
+        {clientId&&!feedbackSent&&(
+          <div style={{padding:'12px 16px',borderTop:'1px solid #E8E4D9'}}>
+            {!showSuggest?(
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={sendApprove} style={{flex:1,background:'#EEF2EB',border:'1px solid #C4D4BC',borderRadius:8,padding:'10px',cursor:'pointer',fontSize:11,fontFamily:'Montserrat,sans-serif',fontWeight:700,color:'#5F6F52',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
+                  <Ico.Check/> Approvo
+                </button>
+                <button onClick={()=>setShowSuggest(true)} style={{flex:1,background:'#FDF8EE',border:'1px solid #F0E0B8',borderRadius:8,padding:'10px',cursor:'pointer',fontSize:11,fontFamily:'Montserrat,sans-serif',fontWeight:700,color:'#a07838',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
+                  <Ico.Pen/> Modifiche
+                </button>
+              </div>
+            ):(
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                <textarea className="input-field" rows={2} placeholder="Descrivi le modifiche che vorresti..." value={note} onChange={e=>setNote(e.target.value)} style={{resize:'none',fontSize:12}}/>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>setShowSuggest(false)} className="btn-ghost" style={{flex:1,padding:'8px'}}>Annulla</button>
+                  <button onClick={sendSuggest} className="btn-primary" style={{flex:1,padding:'8px',width:'auto'}}>Invia</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {clientId&&feedbackSent==='approved'&&(
+          <div style={{padding:'12px 16px',borderTop:'1px solid #E8E4D9',background:'#EEF2EB',textAlign:'center',fontSize:12,color:'#5F6F52',fontWeight:700}}>✓ Post approvato</div>
+        )}
+        {clientId&&feedbackSent==='suggested'&&(
+          <div style={{padding:'12px 16px',borderTop:'1px solid #E8E4D9',background:'#FDF8EE',textAlign:'center',fontSize:12,color:'#a07838',fontWeight:700}}>✓ Richiesta di modifica inviata</div>
+        )}
+        {/* admin actions */}
         {(onEdit||onDelete)&&(
           <div style={{padding:'12px 16px',borderTop:'1px solid #E8E4D9',display:'flex',gap:8}}>
             {onEdit&&<button className="btn-ghost" onClick={onEdit} style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5,padding:'10px'}}><Ico.Edit/> Modifica</button>}
@@ -272,50 +301,32 @@ function IGWrapper({children,actions}){
   );
 }
 
-/* ── FEED POST FORM (admin) ── */
+/* ── FEED POST FORM ── */
 function FeedPostForm({clientId,post,onSave,onCancel}){
-  const [type,setType]=useState(post?post.type:'image');
-  const [caption,setCaption]=useState(post?post.caption||'':'');
-  const [coverUrl,setCoverUrl]=useState(post?post.url||'':'');
-  const [videoUrl,setVideoUrl]=useState(post?post.video_url||'':'');
-  const [slides,setSlides]=useState(post?[...(post.slides||[])].map(s=>({id:s.id,url:s.url})):[]);
-  const [uploading,setUploading]=useState('');
+  const[type,setType]=useState(post?post.type:'image');
+  const[caption,setCaption]=useState(post?post.caption||'':'');
+  const[coverUrl,setCoverUrl]=useState(post?post.url||'':'');
+  const[videoUrl,setVideoUrl]=useState(post?post.video_url||'':'');
+  const[slides,setSlides]=useState(post?[...(post.slides||[])].map(s=>({id:s.id,url:s.url})):[]);
+  const[uploading,setUploading]=useState('');
 
-  async function handleCoverFile(file){
-    setUploading('cover');
-    try{const url=await uploadFile(file,'covers');setCoverUrl(url);}
-    catch(e){alert('Errore upload: '+e.message);}
-    setUploading('');
-  }
-  async function handleVideoFile(file){
-    setUploading('video');
-    try{const url=await uploadFile(file,'videos');setVideoUrl(url);}
-    catch(e){alert('Errore upload: '+e.message);}
-    setUploading('');
-  }
-  async function handleSlideFile(file){
-    setUploading('slide');
-    try{
-      const url=await uploadFile(file,'slides');
-      setSlides(p=>[...p,{id:null,url}]);
-    }catch(e){alert('Errore upload: '+e.message);}
-    setUploading('');
-  }
+  async function handleCoverFile(file){setUploading('cover');try{const url=await uploadFile(file,'covers');setCoverUrl(url);}catch(e){alert('Errore: '+e.message);}setUploading('');}
+  async function handleVideoFile(file){setUploading('video');try{const url=await uploadFile(file,'videos');setVideoUrl(url);}catch(e){alert('Errore: '+e.message);}setUploading('');}
+  async function handleSlideFile(file){setUploading('slide');try{const url=await uploadFile(file,'slides');setSlides(p=>[...p,{id:null,url}]);}catch(e){alert('Errore: '+e.message);}setUploading('');}
   function removeSlide(i){setSlides(p=>p.filter((_,j)=>j!==i));}
 
   async function save(){
-    if(type==='image'&&!coverUrl){alert('Carica un\'immagine');return;}
+    if(type==='image'&&!coverUrl){alert("Carica un'immagine");return;}
     if(type==='video'&&!videoUrl){alert('Carica un video');return;}
-    if(type==='carousel'&&!coverUrl){alert('Carica almeno l\'immagine cover');return;}
+    if(type==='carousel'&&!coverUrl){alert('Carica almeno la cover');return;}
     await onSave({type,caption,url:coverUrl,video_url:videoUrl,slides});
   }
 
   return(
     <div style={{display:'flex',flexDirection:'column',gap:14}}>
-      {/* type selector */}
       <Field label="TIPO DI POST">
         <div style={{display:'flex',gap:8}}>
-          {[['image','Foto','Photo'],['video','Video/Reel','Video'],['carousel','Carosello','Carousel']].map(([v,l,ic])=>(
+          {[['image','Foto'],['video','Video/Reel'],['carousel','Carosello']].map(([v,l])=>(
             <button key={v} className={'type-btn'+(type===v?' active':'')} onClick={()=>setType(v)} type="button">
               {v==='image'&&<Ico.Photo/>}{v==='video'&&<Ico.Video/>}{v==='carousel'&&<Ico.Carousel/>}
               <span style={{fontSize:10}}>{l}</span>
@@ -323,27 +334,21 @@ function FeedPostForm({clientId,post,onSave,onCancel}){
           ))}
         </div>
       </Field>
-
-      {/* image cover */}
       {(type==='image'||type==='carousel')&&(
-        <Field label={type==='carousel'?'IMMAGINE COVER (prima slide)':'IMMAGINE'}>
+        <Field label={type==='carousel'?'IMMAGINE COVER':'IMMAGINE'}>
           <UploadBtn label="Carica immagine" accept="image/*" onFile={handleCoverFile} uploading={uploading==='cover'} preview={coverUrl} isVideo={false}/>
         </Field>
       )}
-
-      {/* video */}
       {type==='video'&&(
         <>
           <Field label="VIDEO (MP4, MOV)">
             <UploadBtn label="Carica video" accept="video/*" onFile={handleVideoFile} uploading={uploading==='video'} preview={videoUrl} isVideo={true}/>
           </Field>
-          <Field label="COPERTINA GRIGLIA (immagine statica — opzionale)">
+          <Field label="COPERTINA GRIGLIA (opzionale)">
             <UploadBtn label="Carica copertina" accept="image/*" onFile={handleCoverFile} uploading={uploading==='cover'} preview={coverUrl} isVideo={false}/>
           </Field>
         </>
       )}
-
-      {/* extra slides */}
       {type==='carousel'&&(
         <Field label="SLIDE AGGIUNTIVE">
           <div className="slide-thumb-row" style={{marginBottom:8}}>
@@ -357,12 +362,9 @@ function FeedPostForm({clientId,post,onSave,onCancel}){
           <UploadBtn label="Aggiungi slide" accept="image/*,video/*" onFile={handleSlideFile} uploading={uploading==='slide'} preview={null}/>
         </Field>
       )}
-
-      {/* caption */}
       <Field label="CAPTION">
         <textarea className="input-field" rows={4} placeholder="Scrivi la caption..." value={caption} onChange={e=>setCaption(e.target.value)} style={{resize:'vertical'}}/>
       </Field>
-
       <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
         <button className="btn-ghost" onClick={onCancel} style={{width:'auto'}}>Annulla</button>
         <button className="btn-primary" onClick={save} style={{width:'auto',padding:'12px 24px'}} disabled={uploading!==''}>
@@ -373,7 +375,7 @@ function FeedPostForm({clientId,post,onSave,onCancel}){
   );
 }
 
-/* ── DATA LAYER ── */
+/* ── DATA ── */
 async function fetchFeed(clientId,publishedOnly){
   let q=sb.from('instagram_feed').select('*').eq('client_id',clientId).order('position',{ascending:true});
   if(publishedOnly)q=q.eq('published',true);
@@ -382,11 +384,8 @@ async function fetchFeed(clientId,publishedOnly){
   const{data:allSlides}=await sb.from('feed_slides').select('*').in('post_id',posts.map(p=>p.id)).order('position',{ascending:true});
   return posts.map(p=>({...p,slides:(allSlides||[]).filter(s=>s.post_id===p.id)}));
 }
-
 async function getClientFull(id){
-  const[
-    {data:c},{data:del},{data:req},{data:doc},{data:hist}
-  ]=await Promise.all([
+  const[{data:c},{data:del},{data:req},{data:doc},{data:hist}]=await Promise.all([
     sb.from('clients').select('*').eq('id',id).maybeSingle(),
     sb.from('deliverables').select('*').eq('client_id',id),
     sb.from('requests').select('*').eq('client_id',id).order('created_at',{ascending:false}),
@@ -399,15 +398,12 @@ async function addHistory(clientId,text,type){
   await sb.from('history').insert({client_id:clientId,date:today(),text,type});
 }
 
-/* ══════════════════════════════════
-   LOGIN
-══════════════════════════════════ */
+/* ══ LOGIN ══ */
 function Login({onLogin}){
   const[email,setEmail]=useState('');
   const[pass,setPass]=useState('');
   const[err,setErr]=useState('');
   const[loading,setLoading]=useState(false);
-
   async function submit(e){
     e.preventDefault();setErr('');setLoading(true);
     const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
@@ -444,9 +440,7 @@ function Login({onLogin}){
   );
 }
 
-/* ══════════════════════════════════
-   CLIENT DASHBOARD
-══════════════════════════════════ */
+/* ══ CLIENT DASHBOARD ══ */
 function ClientDash({clientId,onLogout}){
   const[c,setC]=useState(null);
   const[feed,setFeed]=useState([]);
@@ -457,10 +451,7 @@ function ClientDash({clientId,onLogout}){
   const[viewDoc,setViewDoc]=useState(null);
   const[viewPost,setViewPost]=useState(null);
 
-  async function load(){
-    const d=await getClientFull(clientId);setC(d);
-    const f=await fetchFeed(clientId,true);setFeed(f);
-  }
+  async function load(){const d=await getClientFull(clientId);setC(d);const f=await fetchFeed(clientId,true);setFeed(f);}
   useEffect(()=>{load();},[clientId]);
   if(!c)return<span className="spinner"/>;
 
@@ -470,11 +461,12 @@ function ClientDash({clientId,onLogout}){
   async function sendReq(e){
     e.preventDefault();if(!reqForm.desc.trim())return;
     await sb.from('requests').insert({client_id:clientId,date:today(),type:reqForm.type,description:reqForm.desc,status:'pending'});
-    await addHistory(clientId,'Richiesta inviata: '+reqForm.type,'request');
+    await addHistory(clientId,'Nuova richiesta: '+reqForm.type,'request');
     setReqForm({type:'Grafica Extra',desc:''});setReqSent(true);setTimeout(()=>setReqSent(false),3000);load();
   }
   async function confirmPay(){
-    await addHistory(clientId,"Pagamento confermato dal cliente",'extra');
+    const types=toPay.map(r=>r.type).join(', ');
+    await addHistory(clientId,'Pagamento effettuato: '+types,'extra');
     setPayDone(true);
   }
   async function docAction(docId,action){
@@ -486,7 +478,6 @@ function ClientDash({clientId,onLogout}){
 
   const rl=(s)=>({pending:['IN ATTESA','tag-yellow'],approved:['APPROVATO','tag-green'],rejected:['RIFIUTATO','tag-red'],done:['COMPLETATO','tag-green']})[s]||[s,'tag-gray'];
   const dl=(s)=>({pending:['DA APPROVARE','tag-yellow'],approved:['APPROVATO','tag-green'],rejected:['RIFIUTATO','tag-red']})[s]||[s,'tag-gray'];
-
   const tabs=[
     {id:'overview',label:'LAVORI',icon:<Ico.Work/>},
     {id:'docs',label:'DOCUMENTI'+(pendingDocs>0?' ('+pendingDocs+')':''),icon:<Ico.File/>},
@@ -497,7 +488,8 @@ function ClientDash({clientId,onLogout}){
 
   return(
     <div style={{minHeight:'100vh',background:'#FDFCF8'}}>
-      <div style={{background:'#fff',borderBottom:'1px solid #E8E4D9',padding:'14px 28px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      {/* STICKY HEADER */}
+      <div style={{background:'#fff',borderBottom:'1px solid #E8E4D9',padding:'14px 28px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100}}>
         <Logo/>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
           <span style={{fontSize:12,color:'#888'}}>{c.name}</span>
@@ -509,7 +501,6 @@ function ClientDash({clientId,onLogout}){
           <h2 className="serif" style={{fontSize:32,marginBottom:4}}>Ciao, {c.name.split(' ')[0]}.</h2>
           <p style={{fontSize:12,color:'#888'}}>{c.plan} · Rinnovo: {c.renewal}</p>
         </div>
-
         {c.extra_balance>0&&c.extra_status==='DA SALDARE'&&(
           <div style={{marginBottom:24,border:'1px solid #F0E0B8',background:'#FFFCF5'}}>
             <div style={{background:'#FDF3DC',borderBottom:'1px solid #F0E0B8',padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -523,14 +514,11 @@ function ClientDash({clientId,onLogout}){
               </div>
             ))}
             <div style={{padding:'14px 20px'}}>
-              {!payDone
-                ?<button className="btn-primary" onClick={confirmPay}>HO EFFETTUATO IL PAGAMENTO</button>
-                :<div style={{background:'#EEF2EB',padding:'12px',textAlign:'center',border:'1px solid #C4D4BC',fontSize:12,color:'#5F6F52',fontWeight:700}}>✓ Conferma ricevuta</div>
-              }
+              {!payDone?<button className="btn-primary" onClick={confirmPay}>HO EFFETTUATO IL PAGAMENTO</button>
+                :<div style={{background:'#EEF2EB',padding:'12px',textAlign:'center',border:'1px solid #C4D4BC',fontSize:12,color:'#5F6F52',fontWeight:700}}>✓ Conferma ricevuta</div>}
             </div>
           </div>
         )}
-
         <div style={{display:'flex',borderBottom:'1px solid #E8E4D9',marginBottom:28,overflowX:'auto'}}>
           {tabs.map(t=>(
             <button key={t.id} className={'tab-btn'+(tab===t.id?' active':'')} onClick={()=>setTab(t.id)} style={{display:'flex',alignItems:'center',gap:5}}>
@@ -594,11 +582,9 @@ function ClientDash({clientId,onLogout}){
                       <div key={post.id} className="feed-cell" onClick={()=>setViewPost(post)}>
                         {thumb&&(post.type==='video'&&!post.url
                           ?<video src={post.video_url} muted style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/>
-                          :<img src={thumb} alt=""/>
-                        )}
-                        <div className="feed-cell-overlay"/>
+                          :<img src={thumb} alt=""/>)}
                         {post.type==='video'&&<div className="feed-badge"><Ico.Play/></div>}
-                        {post.type==='carousel'&&post.slides&&post.slides.length>0&&<div className="feed-badge" style={{right:5,top:5}}>+{post.slides.length}</div>}
+                        {post.type==='carousel'&&<div className="feed-badge">≡</div>}
                       </div>
                     );
                   })}
@@ -621,7 +607,7 @@ function ClientDash({clientId,onLogout}){
                 <Field label="DESCRIZIONE">
                   <textarea className="input-field" rows={3} placeholder="Descrivi cosa ti serve..." value={reqForm.desc} onChange={e=>setReqForm(p=>({...p,desc:e.target.value}))} style={{resize:'vertical'}}/>
                 </Field>
-                {reqSent&&<p style={{fontSize:12,color:'#5F6F52',marginBottom:10,fontWeight:600}}>✓ Richiesta inviata!</p>}
+                {reqSent&&<p style={{fontSize:12,color:'#5F6F52',marginBottom:10,fontWeight:600}}>Richiesta inviata!</p>}
                 <button className="btn-primary" type="submit" style={{width:'auto',padding:'12px 24px'}}>INVIA RICHIESTA</button>
               </form>
             </div>
@@ -664,12 +650,12 @@ function ClientDash({clientId,onLogout}){
         )}
       </div>
 
-      {viewPost&&<PostViewer post={viewPost} onClose={()=>setViewPost(null)}/>}
+      {viewPost&&<PostViewer post={viewPost} onClose={()=>setViewPost(null)} clientId={clientId}/>}
 
       <Modal open={!!viewDoc} onClose={()=>setViewDoc(null)} title={viewDoc?viewDoc.title||'':''}>
         {viewDoc&&(
           <div style={{display:'flex',flexDirection:'column',gap:16}}>
-            {viewDoc.url&&<a href={viewDoc.url} target="_blank" rel="noopener" style={{fontSize:11,color:'#3a4a7a',textAlign:'right',display:'block'}}>↗ Apri / Scarica</a>}
+            {viewDoc.url&&<a href={viewDoc.url} target="_blank" rel="noopener" style={{fontSize:11,color:'#3a4a7a',textAlign:'right',display:'block'}}>Apri / Scarica</a>}
             <div style={{background:'#F5F4F0',minHeight:200,display:'flex',alignItems:'center',justifyContent:'center',borderRadius:4}}>
               {viewDoc.url?<iframe src={viewDoc.url} style={{width:'100%',height:360,border:'none'}} title="doc"/>:<p style={{fontSize:12,color:'#888'}}>Nessun file</p>}
             </div>
@@ -682,8 +668,8 @@ function ClientDash({clientId,onLogout}){
                 </div>
               </div>
             )}
-            {viewDoc.status==='approved'&&<div style={{background:'#EEF2EB',border:'1px solid #C4D4BC',padding:'10px',textAlign:'center',color:'#5F6F52',fontSize:11,fontWeight:700}}>✓ Approvato</div>}
-            {viewDoc.status==='rejected'&&<div style={{background:'#FDF0EE',border:'1px solid #e0b0aa',padding:'10px',textAlign:'center',color:'#b94a40',fontSize:11,fontWeight:700}}>✕ Rifiutato</div>}
+            {viewDoc.status==='approved'&&<div style={{background:'#EEF2EB',border:'1px solid #C4D4BC',padding:'10px',textAlign:'center',color:'#5F6F52',fontSize:11,fontWeight:700}}>Approvato</div>}
+            {viewDoc.status==='rejected'&&<div style={{background:'#FDF0EE',border:'1px solid #e0b0aa',padding:'10px',textAlign:'center',color:'#b94a40',fontSize:11,fontWeight:700}}>Rifiutato</div>}
           </div>
         )}
       </Modal>
@@ -691,9 +677,7 @@ function ClientDash({clientId,onLogout}){
   );
 }
 
-/* ══════════════════════════════════
-   ADMIN DASHBOARD
-══════════════════════════════════ */
+/* ══ ADMIN DASHBOARD ══ */
 function AdminDash({onLogout}){
   const[clients,setClients]=useState([]);
   const[tab,setTab]=useState('clients');
@@ -707,7 +691,6 @@ function AdminDash({onLogout}){
   const[editPost,setEditPost]=useState(null);
   const[showNewPost,setShowNewPost]=useState(false);
   const[dragIdx,setDragIdx]=useState(null);
-
   const[mNewClient,setMNewClient]=useState(false);
   const[mEditClient,setMEditClient]=useState(false);
   const[mAddDel,setMAddDel]=useState(false);
@@ -737,26 +720,18 @@ function AdminDash({onLogout}){
   }
   useEffect(()=>{loadClients();},[]);
   useEffect(()=>{if(selId)loadSel(selId);else{setSel(null);setFeed([]);}},[selId]);
-
   const totalPending=clients.reduce((a,c)=>a+(c._pending||0),0);
 
-  /* client CRUD */
   async function createClient(e){
     e.preventDefault();
-    const{data:row,error}=await sb.from('clients').insert({
-      user_id:null,name:fClient.name,email:fClient.email,plan:fClient.plan,
-      contract_notes:fClient.contract_notes,renewal:fClient.renewal,month:fClient.month,
-      extra_balance:0,extra_status:'SALDATO'
-    }).select().maybeSingle();
+    const{data:row,error}=await sb.from('clients').insert({user_id:null,name:fClient.name,email:fClient.email,plan:fClient.plan,contract_notes:fClient.contract_notes,renewal:fClient.renewal,month:fClient.month,extra_balance:0,extra_status:'SALDATO'}).select().maybeSingle();
     if(error){alert('Errore: '+error.message);return;}
-    if(row)await addHistory(row.id,'Cliente creato','admin');
     setMNewClient(false);setFClient({name:'',email:'',plan:'',contract_notes:'',renewal:'',month:''});
     loadClients();
   }
   async function saveEdit(e){
     e.preventDefault();
     await sb.from('clients').update(fEdit).eq('id',selId);
-    await addHistory(selId,'Dati aggiornati','admin');
     setMEditClient(false);loadSel(selId);
   }
   async function delClient(id){
@@ -765,25 +740,22 @@ function AdminDash({onLogout}){
     if(selId===id)setSelId(null);
     loadClients();
   }
-
-  /* deliverables */
   async function addDel(e){
     e.preventDefault();
-    await sb.from('deliverables').insert({client_id:selId,label:fDel.label,used:0,total:parseInt(fDel.total)||4});
-    await addHistory(selId,'Aggiunto: '+fDel.label,'admin');
-    setMAddDel(false);setFDel({label:'',total:4});loadSel(selId);
+    const{data:row}=await sb.from('deliverables').insert({client_id:selId,label:fDel.label,used:0,total:parseInt(fDel.total)||4}).select().maybeSingle();
+    setMAddDel(false);setFDel({label:'',total:4});
+    setSel(prev=>({...prev,deliverables:[...(prev.deliverables||[]),{id:row.id,label:fDel.label,used:0,total:parseInt(fDel.total)||4}]}));
   }
   async function removeDel(dId){
     const d=(sel.deliverables||[]).find(x=>x.id===dId);
     await sb.from('deliverables').delete().eq('id',dId);
-    await addHistory(selId,'Rimosso: '+(d?d.label:''),'admin');
-    loadSel(selId);
+    setSel(prev=>({...prev,deliverables:prev.deliverables.filter(x=>x.id!==dId)}));
   }
   async function updateUsed(dId,delta){
     const d=(sel.deliverables||[]).find(x=>x.id===dId);if(!d)return;
     const nu=Math.max(0,Math.min(d.total,d.used+delta));
     await sb.from('deliverables').update({used:nu}).eq('id',dId);
-    await addHistory(selId,(delta>0?'Consegnato':'Annullato')+': '+d.label+' ('+nu+'/'+d.total+')','delivery');
+    if(delta>0) await addHistory(selId,'Consegnato: '+d.label+' ('+nu+'/'+d.total+')','delivery');
     setSel(prev=>({...prev,deliverables:prev.deliverables.map(x=>x.id===dId?{...x,used:nu}:x)}));
   }
   async function updateTotal(dId,delta){
@@ -792,8 +764,6 @@ function AdminDash({onLogout}){
     await sb.from('deliverables').update({total:nt}).eq('id',dId);
     setSel(prev=>({...prev,deliverables:prev.deliverables.map(x=>x.id===dId?{...x,total:nt}:x)}));
   }
-
-  /* requests */
   async function approveReq(e){
     e.preventDefault();
     const r=(sel.requests||[]).find(x=>x.id===mApprove);if(!r)return;
@@ -817,8 +787,6 @@ function AdminDash({onLogout}){
     await addHistory(selId,'Extra saldato','extra');
     loadSel(selId);loadClients();
   }
-
-  /* notes + docs */
   async function addNote(e){
     e.preventDefault();if(!fNote.trim())return;
     await addHistory(selId,fNote.trim(),'admin');
@@ -830,53 +798,36 @@ function AdminDash({onLogout}){
     await addHistory(selId,'Documento caricato: '+fDoc.title,'admin');
     setFDoc({title:'',url:''});loadSel(selId);
   }
-  async function delDoc(id){
-    await sb.from('documents').delete().eq('id',id);loadSel(selId);
-  }
+  async function delDoc(id){await sb.from('documents').delete().eq('id',id);loadSel(selId);}
 
-  /* ── FEED MANAGEMENT ── */
   async function saveFeedPost({type,caption,url,video_url,slides}){
     const pos=feed.length;
     if(editPost){
       await sb.from('instagram_feed').update({type,caption,url,video_url}).eq('id',editPost.id);
-      // delete old slides and reinsert
       await sb.from('feed_slides').delete().eq('post_id',editPost.id);
-      if(slides&&slides.length>0){
-        await sb.from('feed_slides').insert(slides.map((s,i)=>({post_id:editPost.id,url:s.url,position:i})));
-      }
-      await addHistory(selId,'Feed aggiornato: post modificato','admin');
+      if(slides&&slides.length>0) await sb.from('feed_slides').insert(slides.map((s,i)=>({post_id:editPost.id,url:s.url,position:i})));
     }else{
-      const{data:row}=await sb.from('instagram_feed').insert({
-        client_id:selId,type,caption,url,video_url,published:false,position:pos
-      }).select().maybeSingle();
-      if(row&&slides&&slides.length>0){
-        await sb.from('feed_slides').insert(slides.map((s,i)=>({post_id:row.id,url:s.url,position:i})));
-      }
-      await addHistory(selId,'Feed: nuovo post aggiunto (bozza)','admin');
+      const{data:row}=await sb.from('instagram_feed').insert({client_id:selId,type,caption,url,video_url,published:false,position:pos}).select().maybeSingle();
+      if(row&&slides&&slides.length>0) await sb.from('feed_slides').insert(slides.map((s,i)=>({post_id:row.id,url:s.url,position:i})));
     }
     setShowNewPost(false);setEditPost(null);
     const f=await fetchFeed(selId,false);setFeed(f);
   }
-
   async function togglePublish(post){
     await sb.from('instagram_feed').update({published:!post.published}).eq('id',post.id);
-    await addHistory(selId,(post.published?'Post nascosto':'Post pubblicato'),'admin');
     const f=await fetchFeed(selId,false);setFeed(f);
   }
-
   async function publishAll(){
     await sb.from('instagram_feed').update({published:true}).eq('client_id',selId);
-    await addHistory(selId,'Feed pubblicato al cliente (tutti i post)','admin');
+    await addHistory(selId,'Feed aggiornato','admin');
     const f=await fetchFeed(selId,false);setFeed(f);
   }
-
   async function deleteFeedPost(postId){
-    if(!confirm('Eliminare questo post?'))return;
+    if(!confirm('Eliminare?'))return;
     await sb.from('feed_slides').delete().eq('post_id',postId);
     await sb.from('instagram_feed').delete().eq('id',postId);
     const f=await fetchFeed(selId,false);setFeed(f);
   }
-
   async function dropFeedPost(e,targetIdx){
     e.preventDefault();
     if(dragIdx===null||dragIdx===targetIdx)return;
@@ -889,7 +840,6 @@ function AdminDash({onLogout}){
   }
 
   const rl=(s)=>({pending:['IN ATTESA','tag-yellow'],approved:['APPROVATO','tag-green'],rejected:['RIFIUTATO','tag-red']})[s]||[s,'tag-gray'];
-
   if(loading)return<span className="spinner"/>;
 
   return(
@@ -900,11 +850,7 @@ function AdminDash({onLogout}){
           <p style={{fontSize:9,color:'#555',letterSpacing:'.1em',marginTop:2}}>ADMIN</p>
         </div>
         <nav style={{flex:1,paddingTop:12}}>
-          {[
-            {id:'clients',label:'Clienti',icon:<Ico.Users/>},
-            {id:'requests',label:'Richieste'+(totalPending>0?' ('+totalPending+')':''),icon:<Ico.Bell/>},
-            {id:'history',label:'Cronologia',icon:<Ico.Clock/>},
-          ].map(t=>(
+          {[{id:'clients',label:'Clienti',icon:<Ico.Users/>},{id:'requests',label:'Richieste'+(totalPending>0?' ('+totalPending+')':''),icon:<Ico.Bell/>},{id:'history',label:'Cronologia',icon:<Ico.Clock/>}].map(t=>(
             <div key={t.id} className={'sidebar-item'+(tab===t.id?' active':'')} onClick={()=>{setTab(t.id);setSelId(null);}}>
               {t.icon}{t.label}
             </div>
@@ -917,14 +863,11 @@ function AdminDash({onLogout}){
 
       <div style={{flex:1,overflow:'auto',padding:'32px 36px',maxWidth:1000}}>
 
-        {/* lista clienti */}
         {tab==='clients'&&!selId&&(
           <div className="fade-up">
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:28}}>
               <h2 className="serif" style={{fontSize:28}}>Clienti</h2>
-              <button className="btn-ghost" onClick={()=>setMNewClient(true)} style={{display:'flex',alignItems:'center',gap:6,width:'auto'}}>
-                <Ico.Plus s={13}/> NUOVO CLIENTE
-              </button>
+              <button className="btn-ghost" onClick={()=>setMNewClient(true)} style={{display:'flex',alignItems:'center',gap:6,width:'auto'}}><Ico.Plus s={13}/> NUOVO CLIENTE</button>
             </div>
             {clients.length===0&&<p style={{fontSize:12,color:'#888'}}>Nessun cliente. Creane uno!</p>}
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:16}}>
@@ -947,7 +890,6 @@ function AdminDash({onLogout}){
           </div>
         )}
 
-        {/* dettaglio cliente */}
         {tab==='clients'&&selId&&(
           <div className="fade-up">
             {subLoading||!sel?<span className="spinner"/>:(
@@ -955,16 +897,12 @@ function AdminDash({onLogout}){
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
                   <div style={{display:'flex',alignItems:'center',gap:10}}>
                     <button onClick={()=>setSelId(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#888'}}><Ico.Back/></button>
-                    <div>
-                      <h2 className="serif" style={{fontSize:26}}>{sel.name}</h2>
-                      <p style={{fontSize:11,color:'#888'}}>{sel.email}</p>
-                    </div>
+                    <div><h2 className="serif" style={{fontSize:26}}>{sel.name}</h2><p style={{fontSize:11,color:'#888'}}>{sel.email}</p></div>
                   </div>
                   <button className="btn-ghost" onClick={()=>{setFEdit({name:sel.name,email:sel.email,plan:sel.plan,contract_notes:sel.contract_notes,renewal:sel.renewal,month:sel.month});setMEditClient(true);}} style={{width:'auto',display:'flex',alignItems:'center',gap:5,fontSize:10}}>
                     <Ico.Edit/> MODIFICA
                   </button>
                 </div>
-
                 <div style={{display:'flex',borderBottom:'1px solid #E8E4D9',marginBottom:24,overflowX:'auto'}}>
                   {['overview','docs','social','requests','extra','history'].map(t=>(
                     <button key={t} className={'tab-btn'+(subTab===t?' active':'')} onClick={()=>setSubTab(t)}>
@@ -973,7 +911,6 @@ function AdminDash({onLogout}){
                   ))}
                 </div>
 
-                {/* overview */}
                 {subTab==='overview'&&(
                   <div>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
@@ -1011,7 +948,6 @@ function AdminDash({onLogout}){
                   </div>
                 )}
 
-                {/* docs */}
                 {subTab==='docs'&&(
                   <div>
                     <div className="card" style={{padding:'24px',marginBottom:16}}>
@@ -1027,10 +963,7 @@ function AdminDash({onLogout}){
                       <div style={{display:'flex',flexDirection:'column',gap:8}}>
                         {(sel.documents||[]).map(d=>(
                           <div key={d.id} style={{border:'1px solid #E8E4D9',padding:'12px 14px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                            <div>
-                              <span style={{fontWeight:600,fontSize:12}}>{d.title}</span>
-                              <span style={{marginLeft:8,fontSize:10,color:'#888'}}>{d.status}</span>
-                            </div>
+                            <div><span style={{fontWeight:600,fontSize:12}}>{d.title}</span><span style={{marginLeft:8,fontSize:10,color:'#888'}}>{d.status}</span></div>
                             <button onClick={()=>delDoc(d.id)} style={{background:'none',border:'none',color:'#c0392b',cursor:'pointer'}}><Ico.Trash/></button>
                           </div>
                         ))}
@@ -1039,13 +972,12 @@ function AdminDash({onLogout}){
                   </div>
                 )}
 
-                {/* ── SOCIAL ── */}
                 {subTab==='social'&&(
                   <div>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap',gap:8}}>
                       <div>
                         <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700}}>GESTIONE FEED</p>
-                        <p style={{fontSize:11,color:'#aaa',marginTop:2}}>{feed.filter(p=>p.published).length} pubblicati · {feed.filter(p=>!p.published).length} bozze · clicca per anteprima, trascina per riordinare</p>
+                        <p style={{fontSize:11,color:'#aaa',marginTop:2}}>{feed.filter(p=>p.published).length} pubblicati · {feed.filter(p=>!p.published).length} bozze · trascina per riordinare</p>
                       </div>
                       <div style={{display:'flex',gap:8}}>
                         {feed.some(p=>!p.published)&&(
@@ -1073,249 +1005,5 @@ function AdminDash({onLogout}){
                                 onDragEnd={()=>setDragIdx(null)}
                                 onClick={()=>{if(dragIdx===null)setViewPost(post);}}
                                 style={{opacity:dragIdx===idx?0.4:1,cursor:dragIdx!==null?'grabbing':'pointer'}}>
-                                {thumb
-                                  ?(post.type==='video'&&!post.url
-                                    ?<video src={post.video_url} muted style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/>
-                                    :<img src={thumb} alt=""/>)
-                                  :<div style={{position:'absolute',inset:0,background:'#F5F4F0',display:'flex',alignItems:'center',justifyContent:'center',color:'#ccc',fontSize:10}}>No img</div>
-                                }
-                                {!post.published&&<div className="feed-draft">BOZZA</div>}
-                                {post.type==='video'&&<div className="feed-badge"><Ico.Play/></div>}
-                                {post.type==='carousel'&&<div className="feed-badge">≡</div>}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      }
-                    </IGWrapper>
-                  </div>
-                )}
-
-                {/* requests */}
-                {subTab==='requests'&&(
-                  <div style={{display:'flex',flexDirection:'column',gap:10}}>
-                    {(sel.requests||[]).length===0&&<p style={{fontSize:12,color:'#888'}}>Nessuna richiesta.</p>}
-                    {(sel.requests||[]).map(r=>{
-                      const[lbl,cls]=rl(r.status);
-                      return(
-                        <div key={r.id} className="card" style={{padding:'18px 20px'}}>
-                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:10}}>
-                            <div>
-                              <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}>
-                                <span style={{fontWeight:600,fontSize:13}}>{r.type}</span>
-                                <span className={'tag '+cls}>{lbl}</span>
-                              </div>
-                              <p style={{fontSize:11,color:'#555',marginBottom:2}}>{r.description}</p>
-                              <p style={{fontSize:10,color:'#A0A09A'}}>{r.date}</p>
-                            </div>
-                            {r.status==='pending'&&(
-                              <div style={{display:'flex',gap:8}}>
-                                <button className="btn-success" onClick={()=>setMApprove(r.id)}>APPROVA</button>
-                                <button className="btn-danger" onClick={()=>rejectReq(r.id)}>RIFIUTA</button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* extra */}
-                {subTab==='extra'&&(
-                  <div className="card" style={{padding:'24px'}}>
-                    <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:16}}>SALDO EXTRA</p>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
-                      <div>
-                        <p style={{fontSize:34,fontFamily:'Playfair Display,serif'}}>€{parseFloat(sel.extra_balance||0).toFixed(2)}</p>
-                        <span className={'tag '+(sel.extra_status==='SALDATO'?'tag-green':'tag-red')}>{sel.extra_status}</span>
-                      </div>
-                      {sel.extra_balance>0&&sel.extra_status!=='SALDATO'&&(
-                        <button className="btn-success" onClick={markPaid} style={{width:'auto'}}>SEGNA COME SALDATO</button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* history */}
-                {subTab==='history'&&(
-                  <div>
-                    <div className="card" style={{padding:'20px',marginBottom:14}}>
-                      <form onSubmit={addNote} style={{display:'flex',gap:8}}>
-                        <input className="input-field" style={{flex:1}} placeholder="Aggiungi nota..." value={fNote} onChange={e=>setFNote(e.target.value)}/>
-                        <button className="btn-ghost" type="submit" style={{width:'auto',padding:'12px 16px',whiteSpace:'nowrap'}}>+ NOTA</button>
-                      </form>
-                    </div>
-                    <div className="card" style={{padding:'24px'}}>
-                      {(sel.history||[]).length===0&&<p style={{fontSize:12,color:'#888'}}>Nessuna attività.</p>}
-                      {(sel.history||[]).map(h=>(
-                        <div key={h.id} className="history-item">
-                          <HDot type={h.type}/>
-                          <p style={{fontSize:12,fontWeight:500}}>{h.text}</p>
-                          <p style={{fontSize:10,color:'#A0A09A',marginTop:2}}>{h.date}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {tab==='requests'&&(
-          <div className="fade-up">
-            <h2 className="serif" style={{fontSize:28,marginBottom:24}}>Tutte le Richieste</h2>
-            {clients.every(c=>c._pending===0)&&<p style={{fontSize:12,color:'#888'}}>Nessuna richiesta in attesa.</p>}
-            {clients.filter(c=>c._pending>0).map(c=>(
-              <div key={c.id} style={{marginBottom:20}}>
-                <p style={{fontSize:11,fontWeight:700,letterSpacing:'.1em',color:'#888',marginBottom:8}}>{c.name.toUpperCase()}</p>
-                <button className="btn-ghost" onClick={()=>{setSelId(c.id);setSubTab('requests');setTab('clients');}} style={{width:'auto',fontSize:10,padding:'8px 16px'}}>
-                  GESTISCI {c._pending} RICHIESTA{c._pending>1?'E':''}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {tab==='history'&&(
-          <div className="fade-up">
-            <h2 className="serif" style={{fontSize:28,marginBottom:24}}>Cronologia</h2>
-            <p style={{fontSize:12,color:'#888'}}>Seleziona un cliente per vedere la cronologia.</p>
-          </div>
-        )}
-      </div>
-
-      {/* MODALS */}
-      <Modal open={mNewClient} onClose={()=>setMNewClient(false)} title="Nuovo Cliente">
-        <div className="info-box" style={{marginBottom:16}}>
-          <strong>Passaggi:</strong><br/>
-          1. Crea utente su <strong>Supabase → Authentication → Users → Add user</strong><br/>
-          2. Compila qui — si collegherà automaticamente al primo login
-        </div>
-        <form onSubmit={createClient} style={{display:'flex',flexDirection:'column',gap:0}}>
-          <Field label="NOME"><input className="input-field" placeholder="Es. Giulia Bianchi" value={fClient.name} onChange={e=>setFClient(p=>({...p,name:e.target.value}))} required/></Field>
-          <Field label="EMAIL (uguale a Supabase Auth)"><input className="input-field" type="email" placeholder="giulia@esempio.it" value={fClient.email} onChange={e=>setFClient(p=>({...p,email:e.target.value}))} required/></Field>
-          <Field label="PIANO"><input className="input-field" placeholder="Es. Contratto €400/mese" value={fClient.plan} onChange={e=>setFClient(p=>({...p,plan:e.target.value}))}/></Field>
-          <Field label="MESE"><input className="input-field" placeholder="Es. Maggio 2026" value={fClient.month} onChange={e=>setFClient(p=>({...p,month:e.target.value}))}/></Field>
-          <Field label="RINNOVO"><input className="input-field" placeholder="Es. 01 Giugno 2026" value={fClient.renewal} onChange={e=>setFClient(p=>({...p,renewal:e.target.value}))}/></Field>
-          <Field label="NOTE CONTRATTO"><textarea className="input-field" rows={3} value={fClient.contract_notes} onChange={e=>setFClient(p=>({...p,contract_notes:e.target.value}))} style={{resize:'vertical'}}/></Field>
-          <button className="btn-primary" type="submit" style={{marginTop:8}}>CREA PROFILO</button>
-        </form>
-      </Modal>
-
-      <Modal open={mEditClient} onClose={()=>setMEditClient(false)} title={'Modifica — '+(sel?sel.name||'':'')}>
-        <form onSubmit={saveEdit} style={{display:'flex',flexDirection:'column',gap:0}}>
-          {[['NOME','name','text'],['EMAIL','email','email'],['PIANO','plan','text'],['MESE','month','text'],['RINNOVO','renewal','text']].map(([l,k,t])=>(
-            <Field key={k} label={l}><input className="input-field" type={t} value={fEdit[k]||''} onChange={e=>setFEdit(p=>({...p,[k]:e.target.value}))}/></Field>
-          ))}
-          <Field label="NOTE"><textarea className="input-field" rows={3} value={fEdit.contract_notes||''} onChange={e=>setFEdit(p=>({...p,contract_notes:e.target.value}))} style={{resize:'vertical'}}/></Field>
-          <button className="btn-primary" type="submit" style={{marginTop:8}}>SALVA</button>
-        </form>
-      </Modal>
-
-      <Modal open={mAddDel} onClose={()=>setMAddDel(false)} title="Aggiungi Deliverable">
-        <form onSubmit={addDel} style={{display:'flex',flexDirection:'column',gap:0}}>
-          <Field label="NOME"><input className="input-field" placeholder="Es. Grafiche, Video Reel" value={fDel.label} onChange={e=>setFDel(p=>({...p,label:e.target.value}))} required/></Field>
-          <Field label="QUANTITÀ TOTALE MENSILE"><input className="input-field" type="number" min="1" value={fDel.total} onChange={e=>setFDel(p=>({...p,total:e.target.value}))} required/></Field>
-          <button className="btn-primary" type="submit" style={{marginTop:8}}>AGGIUNGI</button>
-        </form>
-      </Modal>
-
-      <Modal open={!!mApprove} onClose={()=>setMApprove(null)} title="Approva Richiesta">
-        <form onSubmit={approveReq} style={{display:'flex',flexDirection:'column',gap:0}}>
-          <Field label="IMPORTO EXTRA (€) — 0 se incluso">
-            <input className="input-field" type="number" min="0" step="0.01" placeholder="0.00" value={fApprove.price} onChange={e=>setFApprove(p=>({...p,price:e.target.value}))}/>
-          </Field>
-          {parseFloat(fApprove.price)>0&&(
-            <>
-              <Field label="METODO">
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                  {['Bonifico Bancario','PayPal','Stripe / Carta','Satispay','Contanti'].map(m=>(
-                    <button key={m} type="button" onClick={()=>setFApprove(p=>({...p,method:m}))}
-                      style={{padding:'9px 6px',fontSize:11,fontFamily:'Montserrat,sans-serif',fontWeight:600,border:fApprove.method===m?'2px solid #1A1A1A':'1px solid #E8E4D9',background:fApprove.method===m?'#1A1A1A':'#fff',color:fApprove.method===m?'#fff':'#555',cursor:'pointer',gridColumn:m==='Contanti'?'1/-1':''}}>
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </Field>
-              <Field label="DETTAGLI"><input className="input-field" value={fApprove.details} onChange={e=>setFApprove(p=>({...p,details:e.target.value}))}/></Field>
-              <Field label="CAUSALE"><input className="input-field" value={fApprove.note} onChange={e=>setFApprove(p=>({...p,note:e.target.value}))}/></Field>
-            </>
-          )}
-          <button className="btn-primary" type="submit" style={{marginTop:12}}>CONFERMA</button>
-        </form>
-      </Modal>
-
-      {/* new/edit post modal */}
-      <Modal open={showNewPost} onClose={()=>{setShowNewPost(false);setEditPost(null);}} title={editPost?'Modifica Post':'Nuovo Post'} wide>
-        <FeedPostForm
-          clientId={selId}
-          post={editPost}
-          onSave={saveFeedPost}
-          onCancel={()=>{setShowNewPost(false);setEditPost(null);}}
-        />
-      </Modal>
-
-      {viewPost&&<PostViewer post={viewPost} onClose={()=>setViewPost(null)}
-        onEdit={()=>{setEditPost(viewPost);setViewPost(null);setShowNewPost(true);}}
-        onDelete={()=>{if(confirm('Eliminare?')){deleteFeedPost(viewPost.id);setViewPost(null);}}}
-      />}
-    </div>
-  );
-}
-
-/* ══ APP ══ */
-function App(){
-  const[session,setSession]=useState(null);
-  const[checking,setChecking]=useState(true);
-
-  async function handleSession(s){
-    try{
-      if(!s){setSession(null);return;}
-      if(s.user.email===ADMIN_EMAIL){setSession({role:'admin'});return;}
-      let{data:client}=await sb.from('clients').select('*').eq('user_id',s.user.id).maybeSingle();
-      if(!client){
-        const{data:byEmail}=await sb.from('clients').select('*').eq('email',s.user.email).maybeSingle();
-        if(byEmail){await sb.from('clients').update({user_id:s.user.id}).eq('id',byEmail.id);client=byEmail;}
-      }
-      if(client)setSession({role:'client',clientId:client.id});
-      else{setSession(null);await sb.auth.signOut();}
-    }catch(e){
-      console.error('handleSession:',e);setSession(null);
-    }finally{setChecking(false);}
-  }
-
-  useEffect(()=>{
-    let active=true;
-    async function init(){
-      try{
-        const result=await sb.auth.getSession();
-        if(active)await handleSession(result&&result.data?result.data.session:null);
-      }catch(e){console.error('getSession:',e);if(active)setChecking(false);}
-    }
-    init();
-    let sub=null;
-    try{const{data}=sb.auth.onAuthStateChange((_,s)=>{if(active)handleSession(s);});sub=data.subscription;}
-    catch(e){console.error('onAuthStateChange:',e);}
-    return()=>{active=false;if(sub)sub.unsubscribe();};
-  },[]);
-
-  async function logout(){try{await sb.auth.signOut();}catch(e){}setSession(null);}
-
-  if(checking)return(
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',flexDirection:'column',gap:16}}>
-      <span className="spinner"/>
-      <p style={{fontSize:11,color:'#aaa',fontFamily:'Montserrat,sans-serif'}}>Caricamento...</p>
-    </div>
-  );
-  if(!session)return<Login onLogin={(role,clientId)=>setSession({role,clientId})}/>;
-  if(session.role==='admin')return<AdminDash onLogout={logout}/>;
-  if(session.role==='client')return<ClientDash clientId={session.clientId} onLogout={logout}/>;
-  return null;
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-</script>
-</body>
-</html>
+                                {thumb?(post.type==='video'&&!post.url
+                                  ?<video src={post.video_url} muted style={{width:'100%',height:'100%',objectFit:'cover',p
