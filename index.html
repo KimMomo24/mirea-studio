@@ -427,31 +427,37 @@ function Login({onLogin}){
     const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
     if(error){setErr('Email o password non corretti.');setLoading(false);return;}
     const user=data.user;
-    if(user.email===ADMIN_EMAIL){onLogin('admin',null);setLoading(false);return;}
+    if(user.email===ADMIN_EMAIL){
+      try{window.parent.postMessage({type:'mirea_logged_in'},'*');}catch(e){}
+      onLogin('admin',null);setLoading(false);return;
+    }
     let{data:client}=await sb.from('clients').select('*').eq('user_id',user.id).maybeSingle();
     if(!client){
       const{data:byEmail}=await sb.from('clients').select('*').eq('email',user.email).maybeSingle();
       if(byEmail){await sb.from('clients').update({user_id:user.id}).eq('id',byEmail.id);client=byEmail;}
     }
-    if(client){onLogin('client',client.id);}
+    if(client){
+      try{window.parent.postMessage({type:'mirea_logged_in'},'*');}catch(e){}
+      onLogin('client',client.id);
+    }
     else{setErr('Account non associato. Contatta lo studio.');await sb.auth.signOut();}
     setLoading(false);
   }
   return(
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'#FDFCF8',padding:16}}>
-      <div className="fade-up" style={{background:'#fff',border:'1px solid #E8E4D9',width:'100%',maxWidth:420,padding:'52px 44px',textAlign:'center',boxShadow:'0 4px 40px rgba(0,0,0,.04)'}}>
-        <div style={{marginBottom:32}}>
-          <div style={{width:44,height:44,border:'1px solid #D4CFC4',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}}>
-            <span className="serif" style={{fontSize:22,color:'#5F6F52',fontStyle:'italic'}}>m</span>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'#FDFCF8',padding:24}}>
+      <div className="fade-up" style={{background:'#fff',border:'1px solid #E8E4D9',width:'100%',maxWidth:440,padding:'56px 48px',textAlign:'center',boxShadow:'0 4px 40px rgba(0,0,0,.06)'}}>
+        <div style={{marginBottom:36}}>
+          <div style={{width:52,height:52,border:'1px solid #D4CFC4',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px'}}>
+            <span className="serif" style={{fontSize:26,color:'#5F6F52',fontStyle:'italic'}}>m</span>
           </div>
-          <h1 className="serif" style={{fontSize:26,marginBottom:4}}>Area Riservata</h1>
-          <p style={{fontSize:11,color:'#A0A09A',letterSpacing:'.06em'}}>MIREA STUDIO</p>
+          <h1 className="serif" style={{fontSize:30,marginBottom:6}}>Area Riservata</h1>
+          <p style={{fontSize:11,color:'#A0A09A',letterSpacing:'.06em'}}>Inserisci le tue credenziali per accedere.</p>
         </div>
         <form onSubmit={submit} style={{textAlign:'left'}}>
           <Field label="EMAIL"><input className="input-field" type="email" placeholder="La tua email" value={email} onChange={e=>setEmail(e.target.value)} required/></Field>
           <Field label="PASSWORD"><input className="input-field" type="password" placeholder="Password" value={pass} onChange={e=>setPass(e.target.value)} required/></Field>
           {err&&<p style={{fontSize:12,color:'#b94a40',marginBottom:12,textAlign:'center'}}>{err}</p>}
-          <button className="btn-primary" type="submit" disabled={loading} style={{marginTop:4}}>{loading?'...':'ACCEDI'}</button>
+          <button className="btn-primary" type="submit" disabled={loading} style={{marginTop:8,letterSpacing:'.2em'}}>{loading?'...':'ACCEDI ALL\'AREA'}</button>
         </form>
       </div>
     </div>
