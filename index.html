@@ -12,7 +12,7 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#FDFCF8;font-family:'Montserrat',sans-serif;color:#1A1A1A}
+body{background:transparent;font-family:'Montserrat',sans-serif;color:#1A1A1A}
 #root{min-height:100vh}
 .serif{font-family:'Playfair Display',serif!important}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
@@ -422,6 +422,7 @@ function Login({onLogin}){
   const[pass,setPass]=useState('');
   const[err,setErr]=useState('');
   const[loading,setLoading]=useState(false);
+
   async function submit(e){
     e.preventDefault();setErr('');setLoading(true);
     const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
@@ -443,21 +444,76 @@ function Login({onLogin}){
     else{setErr('Account non associato. Contatta lo studio.');await sb.auth.signOut();}
     setLoading(false);
   }
+
+  function closePopup() {
+    try{window.parent.postMessage({type:'close_mirea_login'},'*');}catch(e){}
+  }
+
   return(
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'#FDFCF8',padding:24}}>
-      <div className="fade-up" style={{background:'#fff',border:'1px solid #E8E4D9',width:'100%',maxWidth:440,padding:'56px 48px',textAlign:'center',boxShadow:'0 4px 40px rgba(0,0,0,.06)'}}>
-        <div style={{marginBottom:36}}>
-          <div style={{width:52,height:52,border:'1px solid #D4CFC4',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px'}}>
-            <span className="serif" style={{fontSize:26,color:'#5F6F52',fontStyle:'italic'}}>m</span>
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 9999
+    }}>
+      <div className="scale-in" style={{
+        background: '#fff', width: '100%', maxWidth: 440, padding: '56px 48px',
+        textAlign: 'center', position: 'relative', boxShadow: '0 10px 40px rgba(0,0,0,.15)'
+      }}>
+        <button onClick={closePopup} style={{
+          position: 'absolute', top: 20, right: 20, background: 'none', border: 'none',
+          cursor: 'pointer', color: '#A0A09A', padding: 8
+        }}>
+          <Ico.X s={16}/>
+        </button>
+
+        <div style={{marginBottom: 36}}>
+          <div style={{width: 52, height: 52, border: '1px solid #D4CFC4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px'}}>
+            <span className="serif" style={{fontSize: 26, color: '#5F6F52', fontStyle: 'italic'}}>m</span>
           </div>
-          <h1 className="serif" style={{fontSize:30,marginBottom:6}}>Area Riservata</h1>
-          <p style={{fontSize:11,color:'#A0A09A',letterSpacing:'.06em'}}>Inserisci le tue credenziali per accedere.</p>
+          <h1 className="serif" style={{fontSize: 30, marginBottom: 8, color: '#1A1A1A'}}>Area Riservata</h1>
+          <p style={{fontSize: 11, color: '#A0A09A', letterSpacing: '.04em'}}>Inserisci le tue credenziali per accedere.</p>
         </div>
-        <form onSubmit={submit} style={{textAlign:'left'}}>
-          <Field label="EMAIL"><input className="input-field" type="email" placeholder="La tua email" value={email} onChange={e=>setEmail(e.target.value)} required/></Field>
-          <Field label="PASSWORD"><input className="input-field" type="password" placeholder="Password" value={pass} onChange={e=>setPass(e.target.value)} required/></Field>
-          {err&&<p style={{fontSize:12,color:'#b94a40',marginBottom:12,textAlign:'center'}}>{err}</p>}
-          <button className="btn-primary" type="submit" disabled={loading} style={{marginTop:8,letterSpacing:'.2em'}}>{loading?'...':'ACCEDI ALL\'AREA'}</button>
+
+        <form onSubmit={submit} style={{textAlign: 'left'}}>
+          <div style={{marginBottom: 16}}>
+            <label style={{fontSize: 9, letterSpacing: '.14em', color: '#888', display: 'block', marginBottom: 6, fontWeight: 700}}>EMAIL</label>
+            <input type="email" placeholder="Inserisci la tua email" value={email} onChange={e=>setEmail(e.target.value)} required
+              style={{
+                width: '100%', background: '#fff', border: '1px solid #D4CFC4', padding: '14px 16px',
+                fontSize: 13, fontFamily: 'Montserrat, sans-serif', outline: 'none', color: '#1A1A1A',
+                transition: 'border-color .2s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#1A1A1A'}
+              onBlur={(e) => e.target.style.borderColor = '#D4CFC4'}
+            />
+          </div>
+
+          <div style={{marginBottom: 24}}>
+            <label style={{fontSize: 9, letterSpacing: '.14em', color: '#888', display: 'block', marginBottom: 6, fontWeight: 700}}>PASSWORD</label>
+            <input type="password" placeholder="........" value={pass} onChange={e=>setPass(e.target.value)} required
+              style={{
+                width: '100%', background: '#F5F4F0', border: '1px solid transparent', padding: '14px 16px',
+                fontSize: 13, fontFamily: 'Montserrat, sans-serif', outline: 'none', color: '#1A1A1A',
+                transition: 'all .2s'
+              }}
+              onFocus={(e) => {e.target.style.borderColor = '#D4CFC4'; e.target.style.background = '#fff';}}
+              onBlur={(e) => {e.target.style.borderColor = 'transparent'; e.target.style.background = '#F5F4F0';}}
+            />
+          </div>
+
+          {err && <p style={{fontSize: 12, color: '#b94a40', marginBottom: 12, textAlign: 'center'}}>{err}</p>}
+
+          <button type="submit" disabled={loading}
+            style={{
+              width: '100%', background: '#1A1A1A', color: '#fff', padding: '16px',
+              fontSize: 11, letterSpacing: '.15em', fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
+              border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background .2s',
+              marginTop: 8
+            }}
+            onMouseOver={(e) => e.target.style.background = '#333'}
+            onMouseOut={(e) => e.target.style.background = '#1A1A1A'}
+          >
+            {loading ? "ACCESSO IN CORSO..." : "ACCEDI ALL'AREA"}
+          </button>
         </form>
       </div>
     </div>
@@ -873,7 +929,7 @@ function AdminDash({onLogout}){
   if(loading)return<span className="spinner"/>;
 
   return(
-    <div style={{display:'flex',minHeight:'100vh',flexDirection:isMobile?'column':'row'}}>
+    <div style={{display:'flex',minHeight:'100vh',flexDirection:isMobile?'column':'row', background:'#FDFCF8'}}>
       {!isMobile&&<div className="sidebar">
         <div style={{padding:'24px 20px',borderBottom:'1px solid rgba(255,255,255,.08)'}}>
           <p className="serif" style={{fontSize:15,color:'#fff'}}>Mirea Studio</p>
