@@ -430,7 +430,12 @@ function Login({onLogin}){
     const user=data.user;
     if(user.email===ADMIN_EMAIL){
       try{window.parent.postMessage({type:'mirea_logged_in'},'*');}catch(e){}
-      onLogin('admin',null);setLoading(false);return;
+      
+      // Se l'app è nell'iframe, rompe l'iframe e va a tutto schermo
+      if(window.self !== window.top) window.top.location.href = window.location.href;
+      else onLogin('admin',null);
+      
+      setLoading(false);return;
     }
     let{data:client}=await sb.from('clients').select('*').eq('user_id',user.id).maybeSingle();
     if(!client){
@@ -439,7 +444,11 @@ function Login({onLogin}){
     }
     if(client){
       try{window.parent.postMessage({type:'mirea_logged_in'},'*');}catch(e){}
-      onLogin('client',client.id);
+      
+      // Se l'app è nell'iframe, rompe l'iframe e va a tutto schermo
+      if(window.self !== window.top) window.top.location.href = window.location.href;
+      else onLogin('client',client.id);
+      
     }
     else{setErr('Account non associato. Contatta lo studio.');await sb.auth.signOut();}
     setLoading(false);
