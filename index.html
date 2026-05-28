@@ -382,7 +382,7 @@ async function getClientFull(id){
     {data:c},{data:del},{data:req},{data:doc},{data:hist}
   ]=await Promise.all([
     sb.from('clients').select('*').eq('id',id).maybeSingle(),
-    sb.from('deliverables').select('*').eq('client_id',id).order('created_at',{ascending:true}),
+    sb.from('deliverables').select('*').eq('client_id',id),
     sb.from('requests').select('*').eq('client_id',id).order('created_at',{ascending:false}),
     sb.from('documents').select('*').eq('client_id',id).order('created_at',{ascending:false}),
     sb.from('history').select('*').eq('client_id',id).order('created_at',{ascending:false}),
@@ -853,7 +853,13 @@ function AdminDash({onLogout}){
 
   async function togglePublish(post){
     await sb.from('instagram_feed').update({published:!post.published}).eq('id',post.id);
-    await addHistory(selId,(post.published?'Post nascosto al cliente':'Post pubblicato al cliente'),'admin');
+    await addHistory(selId,(post.published?'Post nascosto':'Post pubblicato'),'admin');
+    const f=await fetchFeed(selId,false);setFeed(f);
+  }
+
+  async function publishAll(){
+    await sb.from('instagram_feed').update({published:true}).eq('client_id',selId);
+    await addHistory(selId,'Feed pubblicato al cliente (tutti i post)','admin');
     const f=await fetchFeed(selId,false);setFeed(f);
   }
 
@@ -1026,88 +1032,86 @@ function AdminDash({onLogout}){
                   </div>
                 )}
 
-                {/* ── SOCIAL (feed management) ── */}
+                {/* ── SOCIAL ── */}
                 {subTab==='social'&&(
                   <div>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                    {/* header */}
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap',gap:8}}>
                       <div>
                         <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700}}>GESTIONE FEED</p>
-                        <p style={{fontSize:11,color:'#aaa',marginTop:2}}>
-                          {feed.filter(p=>p.published).length} pubblicati · {feed.filter(p=>!p.published).length} bozze
-                        </p>
+                        <p style={{fontSize:11,color:'#aaa',marginTop:2}}>{feed.filter(p=>p.published).length} pubblicati · {feed.filter(p=>!p.published).length} bozze</p>
                       </div>
-                      <button className="btn-primary" onClick={()=>setShowNewPost(true)} style={{width:'auto',padding:'10px 18px',display:'flex',alignItems:'center',gap:6,fontSize:11}}>
-                        <Ico.Plus s={12}/> NUOVO POST
-                      </button>
+                      <div style={{display:'flex',gap:8}}>
+                        {feed.some(p=>!p.published)&&(
+                          <button className="btn-success" onClick={publishAll} style={{width:'auto',display:'flex',alignItems:'center',gap:5,fontSize:10}}>
+                            <Ico.Eye/> Pubblica tutto
+                          </button>
+                        )}
+                        <button className="btn-primary" onClick={()=>setShowNewPost(true)} style={{width:'auto',padding:'10px 16px',display:'flex',alignItems:'center',gap:5,fontSize:11}}>
+                          <Ico.Plus s={12}/> Nuovo post
+                        </button>
+                      </div>
                     </div>
 
-                    {/* anteprima griglia */}
-                    <IGWrapper actions={
-                      <span style={{fontSize:10,color:'#888'}}>{feed.filter(p=>p.published).length} visibili</span>
-                    }>
+                    {/* griglia anteprima — click = preview */}
+                    <IGWrapper actions={<span style={{fontSize:10,color:'#888'}}>{feed.filter(p=>p.published).length} visibili</span>}>
                       {feed.length===0
-                        ?<div style={{padding:'40px',textAlign:'center',color:'#888',fontSize:12}}>Nessun post. Aggiungine uno!</div>
+                        ?<div style={{padding:'40px',textAlign:'center',color:'#888',fontSize:12}}>Nessun post ancora.</div>
                         :<div className="feed-grid" style={{padding:'2px 0'}}>
-                          {feed.map((post,idx)=>{
+                          {feed.map(post=>{
                             const thumb=post.url||(post.type==='video'?post.video_url:'');
                             return(
-                              <div key={post.id} className="feed-cell"
-                                draggable
-                                onDragStart={()=>setDragIdx(idx)}
-                                onDragOver={e=>e.preventDefault()}
-                                onDrop={e=>dropFeedPost(e,idx)}
-                                onDragEnd={()=>setDragIdx(null)}
-                                style={{opacity:dragIdx===idx?0.4:1,cursor:'grab'}}>
-                                {thumb&&(post.type==='video'&&!post.url
-                                  ?<video src={post.video_url} muted style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/>
-                                  :<img src={thumb} alt=""/>
-                                )}
-                                {!thumb&&<div style={{position:'absolute',inset:0,background:'#F5F4F0',display:'flex',alignItems:'center',justifyContent:'center',color:'#ccc',fontSize:10}}>No img</div>}
+                              <div key={post.id} className="feed-cell" style={{cursor:'pointer'}} onClick={()=>setViewPost(post)}>
+                                {thumb
+                                  ?(post.type==='video'&&!post.url
+                                    ?<video src={post.video_url} muted style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/>
+                                    :<img src={thumb} alt=""/>)
+                                  :<div style={{position:'absolute',inset:0,background:'#F5F4F0',display:'flex',alignItems:'center',justifyContent:'center',color:'#ccc',fontSize:10}}>No img</div>
+                                }
                                 {!post.published&&<div className="feed-draft">BOZZA</div>}
                                 {post.type==='video'&&<div className="feed-badge"><Ico.Play/></div>}
-                                {post.type==='carousel'&&post.slides&&post.slides.length>0&&<div className="feed-badge">+{post.slides.length}</div>}
+                                {post.type==='carousel'&&<div className="feed-badge">≡</div>}
                               </div>
                             );
                           })}
                         </div>
                       }
                     </IGWrapper>
-                    <p style={{fontSize:10,color:'#bbb',textAlign:'center',marginTop:8,marginBottom:16}}>Trascina per riordinare</p>
 
-                    {/* lista gestione post */}
+                    {/* lista gestione — drag handle qui, non sulla griglia */}
                     {feed.length>0&&(
-                      <div className="card" style={{padding:'16px 20px'}}>
-                        <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:12}}>GESTIONE POST</p>
-                        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                      <div className="card" style={{padding:'14px 16px',marginTop:16}}>
+                        <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:10}}>RIORDINA E GESTISCI — trascina ≡</p>
+                        <div style={{display:'flex',flexDirection:'column',gap:6}}>
                           {feed.map((post,idx)=>{
                             const thumb=post.url||(post.type==='video'?post.video_url:'');
                             return(
-                              <div key={post.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 10px',border:'1px solid #E8E4D9',borderRadius:8,background:post.published?'#fff':'#FDFCF8'}}>
-                                {/* thumbnail */}
-                                <div style={{width:36,height:36,borderRadius:4,overflow:'hidden',background:'#f0f0f0',flexShrink:0}}>
-                                  {thumb?<img src={thumb} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>
-                                    :<div style={{width:'100%',height:'100%',background:'#E8E4D9'}}/>}
+                              <div key={post.id}
+                                draggable
+                                onDragStart={()=>setDragIdx(idx)}
+                                onDragOver={e=>e.preventDefault()}
+                                onDrop={e=>dropFeedPost(e,idx)}
+                                onDragEnd={()=>setDragIdx(null)}
+                                style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',border:'1px solid #E8E4D9',borderRadius:8,background:post.published?'#fff':'#FDFCF8',opacity:dragIdx===idx?0.4:1}}>
+                                {/* drag handle */}
+                                <span style={{color:'#ccc',fontSize:16,cursor:'grab',flexShrink:0,userSelect:'none'}}>≡</span>
+                                {/* thumb */}
+                                <div style={{width:32,height:32,borderRadius:4,overflow:'hidden',background:'#f0f0f0',flexShrink:0}}>
+                                  {thumb?<img src={thumb} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:<div style={{width:'100%',height:'100%',background:'#E8E4D9'}}/>}
                                 </div>
                                 {/* info */}
                                 <div style={{flex:1,minWidth:0}}>
-                                  <div style={{display:'flex',alignItems:'center',gap:6}}>
-                                    <span style={{fontSize:11,fontWeight:600,color:'#1A1A1A'}}>{post.type==='video'?'🎬':post.type==='carousel'?'🎠':'📷'} Post {idx+1}</span>
-                                    <span className={'tag '+(post.published?'tag-green':'tag-yellow')}>{post.published?'PUBBLICATO':'BOZZA'}</span>
-                                  </div>
-                                  {post.caption&&<p style={{fontSize:10,color:'#aaa',marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:200}}>{post.caption}</p>}
+                                  <span style={{fontSize:11,fontWeight:600}}>{post.type==='video'?'🎬':post.type==='carousel'?'🎠':'📷'} Post {idx+1}</span>
+                                  <span className={'tag '+(post.published?'tag-green':'tag-yellow')} style={{marginLeft:6}}>{post.published?'LIVE':'BOZZA'}</span>
                                 </div>
                                 {/* azioni */}
                                 <div style={{display:'flex',gap:5,flexShrink:0}}>
-                                  <button onClick={()=>setViewPost(post)} style={{background:'#F5F4F0',border:'1px solid #E8E4D9',borderRadius:6,padding:'5px 8px',cursor:'pointer',fontSize:10,fontFamily:'Montserrat,sans-serif',fontWeight:600,color:'#555',display:'flex',alignItems:'center',gap:3}}>
-                                    <Ico.Eye/> Anteprima
-                                  </button>
-                                  <button onClick={()=>{setEditPost(post);setShowNewPost(true);}} style={{background:'#F5F4F0',border:'1px solid #E8E4D9',borderRadius:6,padding:'5px 8px',cursor:'pointer',fontSize:10,fontFamily:'Montserrat,sans-serif',fontWeight:600,color:'#555',display:'flex',alignItems:'center',gap:3}}>
+                                  <button onClick={()=>{setEditPost(post);setShowNewPost(true);}}
+                                    style={{background:'#F5F4F0',border:'1px solid #E8E4D9',borderRadius:6,padding:'5px 10px',cursor:'pointer',fontSize:10,fontFamily:'Montserrat,sans-serif',fontWeight:600,color:'#555',display:'flex',alignItems:'center',gap:3}}>
                                     <Ico.Edit/> Modifica
                                   </button>
-                                  <button onClick={()=>togglePublish(post)} style={{background:post.published?'#EEF2EB':'#1A1A1A',border:'none',borderRadius:6,padding:'5px 8px',cursor:'pointer',fontSize:10,fontFamily:'Montserrat,sans-serif',fontWeight:600,color:post.published?'#5F6F52':'#fff',display:'flex',alignItems:'center',gap:3}}>
-                                    {post.published?<><Ico.EyeOff/> Nascondi</>:<><Ico.Eye/> Pubblica</>}
-                                  </button>
-                                  <button onClick={()=>deleteFeedPost(post.id)} style={{background:'none',border:'1px solid #e0b0aa',borderRadius:6,padding:'5px 8px',cursor:'pointer',color:'#c0392b',display:'flex',alignItems:'center'}}>
+                                  <button onClick={()=>deleteFeedPost(post.id)}
+                                    style={{background:'none',border:'1px solid #e0b0aa',borderRadius:6,padding:'5px 8px',cursor:'pointer',color:'#c0392b',display:'flex',alignItems:'center'}}>
                                     <Ico.Trash/>
                                   </button>
                                 </div>
