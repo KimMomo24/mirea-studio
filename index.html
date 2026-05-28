@@ -858,11 +858,16 @@ function AdminDash({onLogout}){
   }
 
   const rl=(s)=>({pending:['IN ATTESA','tag-yellow'],approved:['APPROVATO','tag-green'],rejected:['RIFIUTATO','tag-red']})[s]||[s,'tag-gray'];
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640;
+  const[isMobile,setIsMobile]=useState(window.innerWidth<=640);
+  useEffect(()=>{
+    const handler=()=>setIsMobile(window.innerWidth<=640);
+    window.addEventListener('resize',handler);
+    return()=>window.removeEventListener('resize',handler);
+  },[]);
   if(loading)return<span className="spinner"/>;
 
   return(
-    <div style={{display:'flex',minHeight:'100vh'}}>
+    <div style={{display:'flex',minHeight:'100vh',flexDirection:isMobile?'column':'row'}}>
       {!isMobile&&<div className="sidebar">
         <div style={{padding:'24px 20px',borderBottom:'1px solid rgba(255,255,255,.08)'}}>
           <p className="serif" style={{fontSize:15,color:'#fff'}}>Mirea Studio</p>
@@ -894,7 +899,7 @@ function AdminDash({onLogout}){
         </div>
       </div>}
 
-      <div style={{flex:1,overflow:'auto',padding:'32px 36px',maxWidth:1000}} className="admin-main">
+      <div style={{flex:1,overflow:'auto',padding:isMobile?'16px 14px':'32px 36px',maxWidth:1000}} className="admin-main">
 
         {tab==='clients'&&!selId&&(
           <div className="fade-up">
