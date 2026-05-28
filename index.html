@@ -858,11 +858,12 @@ function AdminDash({onLogout}){
   }
 
   const rl=(s)=>({pending:['IN ATTESA','tag-yellow'],approved:['APPROVATO','tag-green'],rejected:['RIFIUTATO','tag-red']})[s]||[s,'tag-gray'];
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640;
   if(loading)return<span className="spinner"/>;
 
   return(
     <div style={{display:'flex',minHeight:'100vh'}}>
-      <div className="sidebar">
+      {!isMobile&&<div className="sidebar">
         <div style={{padding:'24px 20px',borderBottom:'1px solid rgba(255,255,255,.08)'}}>
           <p className="serif" style={{fontSize:15,color:'#fff'}}>Mirea Studio</p>
           <p style={{fontSize:9,color:'#555',letterSpacing:'.1em',marginTop:2}}>ADMIN</p>
@@ -877,9 +878,9 @@ function AdminDash({onLogout}){
         <div style={{padding:'14px 20px'}}>
           <button onClick={onLogout} style={{background:'none',border:'none',color:'#555',display:'flex',gap:6,fontSize:11,cursor:'pointer',fontFamily:'Montserrat,sans-serif'}}><Ico.Out/> ESCI</button>
         </div>
-      </div>
+      </div>}
 
-      <div className="mobile-nav">
+      {isMobile&&<div className="mobile-nav">
         <div className="mobile-nav-inner">
           <p className="serif" style={{fontSize:14,color:'#fff'}}>Mirea Studio</p>
           <button onClick={onLogout} style={{background:'none',border:'none',color:'#666',fontSize:11,cursor:'pointer',fontFamily:'Montserrat,sans-serif',display:'flex',alignItems:'center',gap:5}}><Ico.Out/> Esci</button>
@@ -891,7 +892,7 @@ function AdminDash({onLogout}){
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       <div style={{flex:1,overflow:'auto',padding:'32px 36px',maxWidth:1000}} className="admin-main">
 
