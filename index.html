@@ -196,7 +196,7 @@ function UploadBtn({label,accept,onFile,uploading,preview,isVideo}){
 }
 
 /* ── POST VIEWER (client + admin preview) ── */
-function PostViewer({post,onClose}){
+function PostViewer({post,onClose,onEdit,onDelete}){
   const [idx,setIdx]=useState(0);
   if(!post)return null;
   const slides=[];
@@ -234,6 +234,12 @@ function PostViewer({post,onClose}){
         {post.caption&&(
           <div className="viewer-info">
             <p style={{fontSize:13,color:'#333',lineHeight:1.7,whiteSpace:'pre-wrap'}}>{post.caption}</p>
+          </div>
+        )}
+        {(onEdit||onDelete)&&(
+          <div style={{padding:'12px 16px',borderTop:'1px solid #E8E4D9',display:'flex',gap:8}}>
+            {onEdit&&<button className="btn-ghost" onClick={onEdit} style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5,padding:'10px'}}><Ico.Edit/> Modifica</button>}
+            {onDelete&&<button className="btn-danger" onClick={onDelete} style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5,padding:'10px'}}><Ico.Trash/> Elimina</button>}
           </div>
         )}
       </div>
@@ -778,12 +784,13 @@ function AdminDash({onLogout}){
     const nu=Math.max(0,Math.min(d.total,d.used+delta));
     await sb.from('deliverables').update({used:nu}).eq('id',dId);
     await addHistory(selId,(delta>0?'Consegnato':'Annullato')+': '+d.label+' ('+nu+'/'+d.total+')','delivery');
-    loadSel(selId);
+    setSel(prev=>({...prev,deliverables:prev.deliverables.map(x=>x.id===dId?{...x,used:nu}:x)}));
   }
   async function updateTotal(dId,delta){
     const d=(sel.deliverables||[]).find(x=>x.id===dId);if(!d)return;
-    await sb.from('deliverables').update({total:Math.max(0,d.total+delta)}).eq('id',dId);
-    loadSel(selId);
+    const nt=Math.max(0,d.total+delta);
+    await sb.from('deliverables').update({total:nt}).eq('id',dId);
+    setSel(prev=>({...prev,deliverables:prev.deliverables.map(x=>x.id===dId?{...x,total:nt}:x)}));
   }
 
   /* requests */
@@ -1035,11 +1042,10 @@ function AdminDash({onLogout}){
                 {/* ── SOCIAL ── */}
                 {subTab==='social'&&(
                   <div>
-                    {/* header */}
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap',gap:8}}>
                       <div>
                         <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700}}>GESTIONE FEED</p>
-                        <p style={{fontSize:11,color:'#aaa',marginTop:2}}>{feed.filter(p=>p.published).length} pubblicati · {feed.filter(p=>!p.published).length} bozze</p>
+                        <p style={{fontSize:11,color:'#aaa',marginTop:2}}>{feed.filter(p=>p.published).length} pubblicati · {feed.filter(p=>!p.published).length} bozze · clicca per anteprima, trascina per riordinare</p>
                       </div>
                       <div style={{display:'flex',gap:8}}>
                         {feed.some(p=>!p.published)&&(
@@ -1052,16 +1058,21 @@ function AdminDash({onLogout}){
                         </button>
                       </div>
                     </div>
-
-                    {/* griglia anteprima — click = preview */}
                     <IGWrapper actions={<span style={{fontSize:10,color:'#888'}}>{feed.filter(p=>p.published).length} visibili</span>}>
                       {feed.length===0
                         ?<div style={{padding:'40px',textAlign:'center',color:'#888',fontSize:12}}>Nessun post ancora.</div>
                         :<div className="feed-grid" style={{padding:'2px 0'}}>
-                          {feed.map(post=>{
+                          {feed.map((post,idx)=>{
                             const thumb=post.url||(post.type==='video'?post.video_url:'');
                             return(
-                              <div key={post.id} className="feed-cell" style={{cursor:'pointer'}} onClick={()=>setViewPost(post)}>
+                              <div key={post.id} className="feed-cell"
+                                draggable
+                                onDragStart={e=>{e.stopPropagation();setDragIdx(idx);}}
+                                onDragOver={e=>e.preventDefault()}
+                                onDrop={e=>dropFeedPost(e,idx)}
+                                onDragEnd={()=>setDragIdx(null)}
+                                onClick={()=>{if(dragIdx===null)setViewPost(post);}}
+                                style={{opacity:dragIdx===idx?0.4:1,cursor:dragIdx!==null?'grabbing':'pointer'}}>
                                 {thumb
                                   ?(post.type==='video'&&!post.url
                                     ?<video src={post.video_url} muted style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}/>
@@ -1077,50 +1088,6 @@ function AdminDash({onLogout}){
                         </div>
                       }
                     </IGWrapper>
-
-                    {/* lista gestione — drag handle qui, non sulla griglia */}
-                    {feed.length>0&&(
-                      <div className="card" style={{padding:'14px 16px',marginTop:16}}>
-                        <p style={{fontSize:10,letterSpacing:'.14em',color:'#888',fontWeight:700,marginBottom:10}}>RIORDINA E GESTISCI — trascina ≡</p>
-                        <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                          {feed.map((post,idx)=>{
-                            const thumb=post.url||(post.type==='video'?post.video_url:'');
-                            return(
-                              <div key={post.id}
-                                draggable
-                                onDragStart={()=>setDragIdx(idx)}
-                                onDragOver={e=>e.preventDefault()}
-                                onDrop={e=>dropFeedPost(e,idx)}
-                                onDragEnd={()=>setDragIdx(null)}
-                                style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',border:'1px solid #E8E4D9',borderRadius:8,background:post.published?'#fff':'#FDFCF8',opacity:dragIdx===idx?0.4:1}}>
-                                {/* drag handle */}
-                                <span style={{color:'#ccc',fontSize:16,cursor:'grab',flexShrink:0,userSelect:'none'}}>≡</span>
-                                {/* thumb */}
-                                <div style={{width:32,height:32,borderRadius:4,overflow:'hidden',background:'#f0f0f0',flexShrink:0}}>
-                                  {thumb?<img src={thumb} style={{width:'100%',height:'100%',objectFit:'cover'}} alt=""/>:<div style={{width:'100%',height:'100%',background:'#E8E4D9'}}/>}
-                                </div>
-                                {/* info */}
-                                <div style={{flex:1,minWidth:0}}>
-                                  <span style={{fontSize:11,fontWeight:600}}>{post.type==='video'?'🎬':post.type==='carousel'?'🎠':'📷'} Post {idx+1}</span>
-                                  <span className={'tag '+(post.published?'tag-green':'tag-yellow')} style={{marginLeft:6}}>{post.published?'LIVE':'BOZZA'}</span>
-                                </div>
-                                {/* azioni */}
-                                <div style={{display:'flex',gap:5,flexShrink:0}}>
-                                  <button onClick={()=>{setEditPost(post);setShowNewPost(true);}}
-                                    style={{background:'#F5F4F0',border:'1px solid #E8E4D9',borderRadius:6,padding:'5px 10px',cursor:'pointer',fontSize:10,fontFamily:'Montserrat,sans-serif',fontWeight:600,color:'#555',display:'flex',alignItems:'center',gap:3}}>
-                                    <Ico.Edit/> Modifica
-                                  </button>
-                                  <button onClick={()=>deleteFeedPost(post.id)}
-                                    style={{background:'none',border:'1px solid #e0b0aa',borderRadius:6,padding:'5px 8px',cursor:'pointer',color:'#c0392b',display:'flex',alignItems:'center'}}>
-                                    <Ico.Trash/>
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -1290,10 +1257,10 @@ function AdminDash({onLogout}){
         />
       </Modal>
 
-      {viewPost&&<PostViewer post={viewPost} onClose={()=>setViewPost(null)}/>}
-    </div>
-  );
-}
+      {viewPost&&<PostViewer post={viewPost} onClose={()=>setViewPost(null)}
+        onEdit={()=>{setEditPost(viewPost);setViewPost(null);setShowNewPost(true);}}
+        onDelete={()=>{if(confirm('Eliminare?')){deleteFeedPost(viewPost.id);setViewPost(null);}}}
+      />}
 
 /* ══ APP ══ */
 function App(){
