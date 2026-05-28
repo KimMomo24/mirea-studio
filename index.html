@@ -1287,6 +1287,7 @@ function AdminDash({onLogout}){
 function App(){
   const[session,setSession]=useState(null);
   const[checking,setChecking]=useState(true);
+  const[loggingOut,setLoggingOut]=useState(false); /* NUOVO STATO */
 
   async function handleSession(s){
     try{
@@ -1317,16 +1318,18 @@ function App(){
   },[]);
 
   async function logout(){
+    setLoggingOut(true); /* Blocca la schermata mostrando un caricamento */
     try{await sb.auth.signOut();}catch(e){}
-    setSession(null);
     // REINDIRIZZAMENTO AL SITO DOPO IL LOGOUT
     window.location.href = 'https://www.mireastudio.it';
   }
 
-  if(checking)return(
+  if(checking || loggingOut)return(
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',flexDirection:'column',gap:16}}>
       <span className="spinner"/>
-      <p style={{fontSize:11,color:'#aaa',fontFamily:'Montserrat,sans-serif'}}>Caricamento...</p>
+      <p style={{fontSize:11,color:'#aaa',fontFamily:'Montserrat,sans-serif'}}>
+        {loggingOut ? 'Uscita in corso...' : 'Caricamento...'}
+      </p>
     </div>
   );
   
